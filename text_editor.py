@@ -1,25 +1,40 @@
+"""Text Editor"""
+
 # import keyboard
+
 class Model:
-    def __init__(self, text=[], cursor_position=0, prev_id=None, next_id=None, cache=dict(), curr_id=0, iterator=1) -> None:
-        self.text = text
+    """
+    The model for the text editor.
+    API supports up/down/left/right movement of cursor and insert/delete.
+    TODO: Add highlighting.
+    """
+    def __init__(self, cursor_position=0, prev_id=None,
+                 next_id=None, curr_id=0, iterator=1) -> None:
+        self.text = []
         self.cursor_position = cursor_position
+
         self.prev_id = prev_id
         self.next_id = next_id
-        self.cache = cache
         self.curr_id = curr_id
         self.iterator = iterator
 
+        self.cache = {}
+
 
     def right(self) -> None:
-        if len(self.text) > self.cursor_position:
+        """Moves the cursor right by shifting the cursor position right."""
+        if self.cursor_position < len(self.text):
             self.cursor_position += 1
-    
+
     def left(self) -> None:
+        """Moves the cursor left by shifting the cursor position left."""
         if self.cursor_position > 0:
             self.cursor_position -= 1
-    
+
     def up(self) -> None:
-        if self.prev_id != None:
+        """Moves the cursor up by retrieving the cached data for prev_id and 
+        updating relevant fields."""
+        if self.prev_id is not None:
             [prev_text, prev_prev_id, prev_next_id] = self.cache[self.prev_id]
             self.curr_id = self.prev_id
             self.text = prev_text
@@ -28,9 +43,11 @@ class Model:
             self.next_id = prev_next_id
         else:
             self.cursor_position = 0
-    
+
     def down(self) -> None:
-        if self.next_id != None:
+        """Moves the cursor down by retrieving the cached data for next_id and 
+        updating relevant fields."""
+        if self.next_id is not None:
             [next_text, next_prev_id, next_next_id] = self.cache[self.next_id]
             self.curr_id = self.next_id
             self.text = next_text
@@ -41,6 +58,9 @@ class Model:
             self.cursor_position = len(self.text)
 
     def insert(self, char='') -> None:
+        """Inserts char to the current line of text. If the char is \n, it 
+        will store everything behind the cursor in the cache and create a 
+        new id for the current line."""
         if char == '\n':
             self.cache[self.curr_id][0] = self.text[:self.cursor_position+1]
             self.cache[self.curr_id][2] = self.iterator
@@ -64,7 +84,9 @@ class Model:
 
 
     def delete(self) -> None:
-        if self.cursor_position == 0 and self.prev_id != None:
+        """Deletes char from current line of text. If it is at the end of the line and there 
+        is a previous line, it will merge the two lines."""
+        if self.cursor_position == 0 and self.prev_id is not None:
             [prev_text, prev_prev_id, _] = self.cache.pop(self.prev_id)
             self.text = prev_text+self.text
             self.cursor_position = len(prev_text)
@@ -74,20 +96,18 @@ class Model:
             if self.cursor_position > 0:
                 self.cursor_position -= 1
         self.cache[self.curr_id] = [self.text, self.prev_id, self.next_id]
-        
+
 
 
 
 class Controller:
-    pass
-    #Figure out later
-    #  
+    """TODO"""    
 
 
 def main():
-    #Testing
+    """Testing"""
     model = Model()
-    
+
     #check insert works correctly
     model.insert('a')
     assert model.text == ['a']
@@ -139,13 +159,9 @@ def main():
     model.down()
     assert model.text == ['f']
 
-
-
-
-
     print("All tests pass")
-
 
 
 if __name__ == "__main__":
     main()
+    
