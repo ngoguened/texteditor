@@ -9,16 +9,29 @@ class Model:
     TODO: Add highlighting.
     TODO: Read/Write files.
     """
+
+    # window update constants:
+    def UP(self):
+        return "up"
+    def DOWN(self):
+        return "down"
+    def INSERT(self):
+        return "insert"
+    def DELETE(self):
+        return "delete"
+
     def __init__(self, cursor_position=0, prev_id=None, next_id=None,
                  curr_id=0, iterator=1, window=(10,16)) -> None:
         self.text = []
-        self.cache = {}
+        self.cache = {} # Stores the text, the previous id, and the next id of each line.
         self.cursor_position = cursor_position
 
-        self.prev_id = prev_id
-        self.next_id = next_id
-        self.curr_id = curr_id
-        self.iterator = iterator
+        # ids are keys for each line in the cache.
+        self.curr_id = curr_id # the id for the current line being manipulated.
+        self.prev_id = prev_id # the id for the previous line.
+        self.next_id = next_id # the id for the next line.
+
+        self.iterator = iterator # Creates monotonic identifiers so that new ids are guaranteed to be unique.
 
         self.window_rows = [None]*window[0]
         self.window_cols = [0, window[1]]
@@ -34,7 +47,7 @@ class Model:
 
     def update_window_rows(self, operation=None) -> None:
         """Update the window rows relative to the stored pointers in window_rows."""
-        if operation not in ["up", "down", "insert", "delete", None]:
+        if operation not in [self.UP(), self.DOWN(), self.INSERT(), self.DELETE()]:
             raise ValueError()
         if self.curr_id not in self.window_rows:
             if operation == "down":
@@ -84,7 +97,7 @@ class Model:
             self.update_window_cols()
             self.prev_id = prev_prev_id
             self.next_id = prev_next_id
-            self.update_window_rows("up")
+            self.update_window_rows(self.UP())
         else:
             self.cursor_position = 0
             self.update_window_cols()
@@ -100,7 +113,7 @@ class Model:
             self.update_window_cols()
             self.prev_id = next_prev_id
             self.next_id = next_next_id
-            self.update_window_rows("down")
+            self.update_window_rows(self.DOWN())
         else:
             self.cursor_position = len(self.text)
             self.update_window_cols()
@@ -122,7 +135,7 @@ class Model:
             self.cache[self.iterator] = [self.text, self.prev_id, self.next_id]
             self.curr_id = self.iterator
             self.iterator += 1
-            self.update_window_rows("insert")
+            self.update_window_rows(self.INSERT())
         else:
             if len(self.text) <= self.cursor_position:
                 self.text.append(char)
@@ -140,9 +153,9 @@ class Model:
             [prev_text, prev_prev_id, _] = self.cache.pop(self.prev_id)
             self.text = prev_text+self.text
             self.cursor_position = len(prev_text)-1
-            self.update_window_rows()
+            self.update_window_cols()
             self.prev_id = prev_prev_id
-            self.update_window_rows("delete")
+            self.update_window_rows(self.DELETE())
         else:
             self.text = self.text[:self.cursor_position-1] + self.text[self.cursor_position:]
             if self.cursor_position > 0:
