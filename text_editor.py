@@ -1,4 +1,16 @@
-"""Text Editor"""
+"""
+The data structure is a dictionary of text lines with pointers to the previous and next line. 
+For example, the string:
+
+0 "Hello, 
+1  World!"
+
+will be stored as:
+{ 0: [['H','e','l','l','o',','], None, 1], 
+  1: [['W','o','r','l','d','!'], 0, None]}
+
+As new lines and text get added and removed, the data structure updates accordingly.
+"""
 
 # import curses
 
@@ -21,61 +33,68 @@ class Model:
         return "delete"
 
     def __init__(self, cursor_position=0, prev_id=None, next_id=None,
-                 curr_id=0, iterator=1, window=(10,16)) -> None:
-        self.text = []
-        self.cache = {} # Stores the text, the previous id, and the next id of each line.
+                 curr_id=0, iterator=1, window_size=(10,16)) -> None:
+        self.curr_line = []
+        self.lines = {} # Stores the text, the previous id, and the next id of each line.
         self.cursor_position = cursor_position
 
-        # ids are keys for each line in the cache.
+        # ids are keys for each stored line.
         self.curr_id = curr_id # the id for the current line being manipulated.
         self.prev_id = prev_id # the id for the previous line.
         self.next_id = next_id # the id for the next line.
 
-        self.iterator = iterator # Creates monotonic identifiers so that new ids are guaranteed to be unique.
+        self.iterator = iterator # Allocates monotonically increasing identifiers to guarantee new ids are unique.
 
-        self.window_rows = [None]*window[0]
-        self.window_cols = [0, window[1]]
+        self.window_size = window_size
+        self.top_window_row = self.curr_id
+        self.top_window_col = 0
 
     def update_window_cols(self) -> None:
-        """Update the window columns relative to the cursor."""
-        if self.cursor_position > self.window_cols[1]:
-            self.window_cols[0]+=1
-            self.window_cols[1]+=1
-        elif self.cursor_position < self.window_cols[0]:
-            self.window_cols[0]-=1
-            self.window_cols[1]-=1
+        """Update the window's first column relative to the cursor."""
+        if self.cursor_position > self.window_size[1]+self.top_window_col:
+            self.top_window_col+=1
+        elif self.cursor_position < self.top_window_col:
+            self.top_window_col-=1
 
     def update_window_rows(self, operation=None) -> None:
-        """Update the window rows relative to the stored pointers in window_rows."""
-        if operation not in [self.UP(), self.DOWN(), self.INSERT(), self.DELETE()]:
-            raise ValueError()
-        if self.curr_id not in self.window_rows:
-            if operation == "down":
-                self.window_rows = self.window_rows[1:]+[self.curr_id]
-            elif operation == "up":
-                self.window_rows = [self.curr_id]+self.window_rows[:len(self.window_rows)-1]
-
-            elif operation == "insert":
-                for idx, row in enumerate(self.window_rows):
-                    if row is None:
-                        self.window_rows[idx] = self.curr_id
-                        return
-                self.window_rows = self.window_rows[1:]+[self.curr_id]
+        """Update the window's first row relative to row-changing operations."""
+        if operation == self.UP():
+            if self.next_id == self.top_window_row:
+                self.top_window_row = self.curr_id
+        elif operation in [self.INSERT(),self.DOWN()]:
+            tmp = self.top_window_row
+            for _ in range(self.window_size[0]-1):
+                if tmp is None or self.lines[tmp][2] is None or tmp == self.curr_id:
+                    return
+                tmp = self.lines[tmp][2]
+            if tmp != self.curr_id:
+                self.top_window_row = self.lines[self.top_window_row][2]
+        elif operation == self.DELETE():
+            if self.top_window_row not in self.lines:
+                self.top_window_row = self.curr_id
         else:
-            if operation == "delete":
-                for idx, row in enumerate(self.window_rows):
-                    if row not in self.cache and self.window_rows[0] is not None:
-                        removed_id = self.window_rows[:idx]+self.window_rows[idx+1:]
-                        if self.window_rows[0] in self.cache and self.cache[self.window_rows[0]][1] is not None:
-                            self.window_rows = [self.cache[self.window_rows[0]][1]]+removed_id
-                        else:
-                            if self.window_rows[len(self.window_rows)-1] is not None:
-                                self.window_rows = removed_id+[self.cache[self.window_rows[len(self.window_rows)-1]][2]]
+            raise ValueError()
+
+    def print_window(self) -> str:
+        """Makes a string of the current window"""
+        out=""
+        iterate_row = self.top_window_row
+        iterate_col = self.top_window_col
+        for _ in range(self.window_size[0]):
+            for i in range(iterate_col, iterate_col+self.window_size[1]):
+                if i in range(len(self.lines[iterate_row][0])):
+                    out+=self.lines[iterate_row][0][i]
+                else:
+                    out+=" "
+            if iterate_row is not None:
+                iterate_row = self.lines[iterate_row][2]
+            out +="\n"
+        return out[:-1]
 
 
     def right(self) -> None:
         """Moves the cursor right by shifting the cursor position right."""
-        if self.cursor_position < len(self.text):
+        if self.cursor_position < len(self.curr_line):
             self.cursor_position += 1
             self.update_window_cols()
 
@@ -87,13 +106,13 @@ class Model:
 
 
     def up(self) -> None:
-        """Moves the cursor up by retrieving the cached data for prev_id and 
+        """Moves the cursor up by retrieving the data for prev_id and 
         updating relevant fields."""
         if self.prev_id is not None:
-            [prev_text, prev_prev_id, prev_next_id] = self.cache[self.prev_id]
+            [prev_line, prev_prev_id, prev_next_id] = self.lines[self.prev_id]
             self.curr_id = self.prev_id
-            self.text = prev_text
-            self.cursor_position = min(len(prev_text), self.cursor_position)
+            self.curr_line = prev_line
+            self.cursor_position = min(len(prev_line), self.cursor_position)
             self.update_window_cols()
             self.prev_id = prev_prev_id
             self.next_id = prev_next_id
@@ -103,68 +122,65 @@ class Model:
             self.update_window_cols()
 
     def down(self) -> None:
-        """Moves the cursor down by retrieving the cached data for next_id and 
+        """Moves the cursor down by retrieving the data for next_id and 
         updating relevant fields."""
         if self.next_id is not None:
-            [next_text, next_prev_id, next_next_id] = self.cache[self.next_id]
+            [next_line, next_prev_id, next_next_id] = self.lines[self.next_id]
             self.curr_id = self.next_id
-            self.text = next_text
-            self.cursor_position = min(len(next_text), self.cursor_position)
+            self.curr_line = next_line
+            self.cursor_position = min(len(next_line), self.cursor_position)
             self.update_window_cols()
             self.prev_id = next_prev_id
             self.next_id = next_next_id
             self.update_window_rows(self.DOWN())
         else:
-            self.cursor_position = len(self.text)
+            self.cursor_position = len(self.curr_line)
             self.update_window_cols()
 
     def insert(self, char='') -> None:
         """Inserts char to the current line of text. If the char is \n, it 
-        will store everything behind the cursor in the cache and create a 
+        will store everything behind the cursor in lines and create a 
         new id for the current line."""
         if char == '\n':
-            self.cache[self.curr_id][0] = self.text[:self.cursor_position+1]
-            self.cache[self.curr_id][2] = self.iterator
-            self.text = self.text[self.cursor_position+1:]
+            self.lines[self.curr_id][0] = self.curr_line[:self.cursor_position+1]
+            self.lines[self.curr_id][2] = self.iterator
+            self.curr_line = self.curr_line[self.cursor_position+1:]
             self.cursor_position = 0
             self.update_window_cols()
             self.prev_id = self.curr_id
 
-            if self.next_id in self.cache:
-                self.cache[self.next_id][1] = self.iterator
-            self.cache[self.iterator] = [self.text, self.prev_id, self.next_id]
+            if self.next_id in self.lines:
+                self.lines[self.next_id][1] = self.iterator
+            self.lines[self.iterator] = [self.curr_line, self.prev_id, self.next_id]
             self.curr_id = self.iterator
             self.iterator += 1
             self.update_window_rows(self.INSERT())
         else:
-            if len(self.text) <= self.cursor_position:
-                self.text.append(char)
+            if len(self.curr_line) <= self.cursor_position:
+                self.curr_line.append(char)
             else:
-                self.text[self.cursor_position] = char
+                self.curr_line[self.cursor_position] = char
 
             self.cursor_position += 1
             self.update_window_cols()
-            self.cache[self.curr_id] = [self.text, self.prev_id, self.next_id]
+            self.lines[self.curr_id] = [self.curr_line, self.prev_id, self.next_id]
 
     def delete(self) -> None:
         """Deletes char from current line of text. If it is at the end of the line and there 
         is a previous line, it will merge the two lines."""
         if self.cursor_position == 0 and self.prev_id is not None:
-            [prev_text, prev_prev_id, _] = self.cache.pop(self.prev_id)
-            self.text = prev_text+self.text
-            self.cursor_position = len(prev_text)-1
+            [prev_line, prev_prev_id, _] = self.lines.pop(self.prev_id)
+            self.curr_line = prev_line+self.curr_line
+            self.cursor_position = len(prev_line)-1
             self.update_window_cols()
             self.prev_id = prev_prev_id
             self.update_window_rows(self.DELETE())
         else:
-            self.text = self.text[:self.cursor_position-1] + self.text[self.cursor_position:]
+            self.curr_line = self.curr_line[:self.cursor_position-1] + self.curr_line[self.cursor_position:]
             if self.cursor_position > 0:
                 self.cursor_position -= 1
                 self.update_window_cols()
-        self.cache[self.curr_id] = [self.text, self.prev_id, self.next_id]
-
-
-
+        self.lines[self.curr_id] = [self.curr_line, self.prev_id, self.next_id]
 
 class Controller:
     """TODO"""
@@ -175,94 +191,93 @@ def main():
 
     #check insert works correctly
     model.insert('a')
-    assert model.text == ['a']
+    assert model.curr_line == ['a']
     model.insert('b')
-    assert model.text == ['a','b']
+    assert model.curr_line == ['a','b']
     model.insert('c')
-    assert model.text == ['a','b','c']
+    assert model.curr_line == ['a','b','c']
 
     #check delete works correctly
     model.delete()
-    assert model.text == ['a','b']
+    assert model.curr_line == ['a','b']
     model.delete()
-    assert model.text == ['a']
+    assert model.curr_line == ['a']
     model.delete()
-    assert model.text == []
+    assert model.curr_line == []
     model.delete()
-    assert model.text == []
+    assert model.curr_line == []
 
     #check line caching works correctly
     model.insert('a')
     model.insert('b')
     model.insert('\n')
-    assert model.text == []
-    assert model.cache[0][0] == ['a','b']
+    assert model.curr_line == []
+    assert model.lines[0][0] == ['a','b']
     model.insert('c')
     model.insert('\n')
     model.insert('d')
-    assert model.text == ['d']
-    assert model.cache[0][0] == ['a','b']
-    assert model.cache[1][0] == ['c']
+    assert model.curr_line == ['d']
+    assert model.lines[0][0] == ['a','b']
+    assert model.lines[1][0] == ['c']
     model.left()
     model.delete()
-    assert model.text == ['c','d']
-    assert 1 not in model.cache
+    assert model.curr_line == ['c','d']
+    assert 1 not in model.lines
     model.left()
     model.delete()
-    assert model.text == ['a','b','c','d']
+    assert model.curr_line == ['a','b','c','d']
 
     model.down()
     model.insert('\n')
     model.insert('f')
     model.up()
-    assert model.text == ['a','b','c','d']
+    assert model.curr_line == ['a','b','c','d']
     while model.cursor_position != 4:
         model.right()
     model.insert('\n')
     model.insert('e')
-    assert model.text == ['e']
+    assert model.curr_line == ['e']
     model.down()
-    assert model.text == ['f']
+    assert model.curr_line == ['f']
 
     #Check the window
-    model=Model(window=(1,5))
-    assert model.window_rows == [None] and model.window_cols == [0,5]
+    model=Model(window_size=(1,5))
+    assert model.top_window_row == 0 and model.top_window_col == 0
     for char in "Hello\nWorld!":
         model.insert(char)
-    assert model.window_cols == [1,6]
-    assert model.window_rows == [1]
+    
+    assert model.top_window_col == 1
     for _ in range(6):
         model.left()
-    assert model.window_cols == [0,5]
+    assert model.top_window_col == 0
 
     model.up()
-    assert model.window_rows == [0]
+    assert model.top_window_row == 0
     model.up()
-    assert model.window_rows == [0]
+    assert model.top_window_row == 0
     model.down()
-    assert model.window_rows == [1]
+    assert model.top_window_row == 1
     model.delete()
-    assert model.window_rows == [1]
+    assert model.top_window_row == 1
     model.insert('\n')
-    assert model.window_rows == [2]
+    assert model.top_window_row == 2
     model.up()
-    assert model.window_rows == [1]
+    assert model.top_window_row == 1
 
-    model=Model(window=(2,5))
+    model=Model(window_size=(2,5))
     for char in "Hello\nthere,\nWorld!":
         model.insert(char)
-    assert model.window_rows == [1,2]
+    assert model.top_window_row == 1
     model.up()
     model.up()
-    assert model.window_rows == [0,1]
+    assert model.top_window_row == 0
     model.down()
     for _ in range(5):
         model.left()
     model.delete()
-    assert model.window_rows == [1,2]
+    assert model.top_window_row == 1
     model.insert('\n')
-    print(model.cache)
-    assert model.window_rows == [2,3]
+    assert model.top_window_row == 1
 
     print("All tests pass")
 
