@@ -12,6 +12,33 @@ will be stored as:
 As new lines and text get added and removed, the data structure updates accordingly.
 """
 
+class Lines:
+    """Stores the text, the previous id, and the next id of each line."""
+    def __init__(self) -> None:
+        self.dict = {}
+    
+    def store(self, curr_id, line, prev_id, next_id) -> None:
+        self.dict[curr_id] = [line, prev_id, next_id]
+
+    def fetch_all(self, key) -> list[list[str], int, int]:
+        return self.dict[key]
+    
+    def fetch_line(self, key) -> list[str]:
+        return self.dict[key][0]
+
+    def fetch_prev(self, key) -> list[str]:
+        return self.dict[key][1]
+    
+    def fetch_next(self, key) -> list[str]:
+        return self.dict[key][2]
+    
+    def pop(self, key) -> list[list[str], int, int]:
+        return self.dict.pop(key)
+    
+    def present(self, key) -> bool:
+        return key in self.dict
+    
+
 # import curses
 
 class Model:
@@ -23,19 +50,15 @@ class Model:
     """
 
     # window update constants:
-    def UP(self):
-        return "up"
-    def DOWN(self):
-        return "down"
-    def INSERT(self):
-        return "insert"
-    def DELETE(self):
-        return "delete"
+    UP = 0
+    DOWN = 1
+    INSERT = 2
+    DELETE = 3
 
     def __init__(self, cursor_position=0, prev_id=None, next_id=None,
                  curr_id=0, iterator=1, window_size=(10,16)) -> None:
         self.curr_line = []
-        self.lines = {} # Stores the text, the previous id, and the next id of each line.
+        self.lines = Lines()
         self.cursor_position = cursor_position
 
         # ids are keys for each stored line.
@@ -58,22 +81,23 @@ class Model:
 
     def update_window_rows(self, operation=None) -> None:
         """Update the window's first row relative to row-changing operations."""
-        if operation == self.UP():
+        if operation == self.UP:
             if self.next_id == self.top_window_row:
                 self.top_window_row = self.curr_id
-        elif operation in [self.INSERT(),self.DOWN()]:
+        elif operation in [self.INSERT,self.DOWN]:
             tmp = self.top_window_row
             for _ in range(self.window_size[0]-1):
-                if tmp is None or self.lines[tmp][2] is None or tmp == self.curr_id:
+                if tmp is None or self.lines.fetch_next(tmp) is None or tmp == self.curr_id:
                     return
-                tmp = self.lines[tmp][2]
+                tmp = self.lines.fetch_next(tmp)
             if tmp != self.curr_id:
-                self.top_window_row = self.lines[self.top_window_row][2]
-        elif operation == self.DELETE():
-            if self.top_window_row not in self.lines:
+                self.top_window_row = self.lines.fetch_next(self.top_window_row)
+        elif operation == self.DELETE:
+            if not self.lines.present(self.top_window_row):
                 self.top_window_row = self.curr_id
         else:
             raise ValueError()
+
 
     def print_window(self) -> str:
         """Makes a string of the current window"""
@@ -82,12 +106,12 @@ class Model:
         iterate_col = self.top_window_col
         for _ in range(self.window_size[0]):
             for i in range(iterate_col, iterate_col+self.window_size[1]):
-                if i in range(len(self.lines[iterate_row][0])):
-                    out+=self.lines[iterate_row][0][i]
+                if i in range(len(self.lines.fetch_line(iterate_row))):
+                    out+=self.lines.fetch_line(iterate_row)[i]
                 else:
                     out+=" "
             if iterate_row is not None:
-                iterate_row = self.lines[iterate_row][2]
+                iterate_row = self.lines.fetch_next(iterate_row)
             out +="\n"
         return out[:-1]
 
@@ -109,14 +133,14 @@ class Model:
         """Moves the cursor up by retrieving the data for prev_id and 
         updating relevant fields."""
         if self.prev_id is not None:
-            [prev_line, prev_prev_id, prev_next_id] = self.lines[self.prev_id]
+            [prev_line, prev_prev_id, prev_next_id] = self.lines.fetch_all(self.prev_id)
             self.curr_id = self.prev_id
             self.curr_line = prev_line
             self.cursor_position = min(len(prev_line), self.cursor_position)
             self.update_window_cols()
             self.prev_id = prev_prev_id
             self.next_id = prev_next_id
-            self.update_window_rows(self.UP())
+            self.update_window_rows(self.UP)
         else:
             self.cursor_position = 0
             self.update_window_cols()
@@ -125,14 +149,14 @@ class Model:
         """Moves the cursor down by retrieving the data for next_id and 
         updating relevant fields."""
         if self.next_id is not None:
-            [next_line, next_prev_id, next_next_id] = self.lines[self.next_id]
+            [next_line, next_prev_id, next_next_id] = self.lines.fetch_all(self.next_id)
             self.curr_id = self.next_id
             self.curr_line = next_line
             self.cursor_position = min(len(next_line), self.cursor_position)
             self.update_window_cols()
             self.prev_id = next_prev_id
             self.next_id = next_next_id
-            self.update_window_rows(self.DOWN())
+            self.update_window_rows(self.DOWN)
         else:
             self.cursor_position = len(self.curr_line)
             self.update_window_cols()
@@ -142,19 +166,18 @@ class Model:
         will store everything behind the cursor in lines and create a 
         new id for the current line."""
         if char == '\n':
-            self.lines[self.curr_id][0] = self.curr_line[:self.cursor_position+1]
-            self.lines[self.curr_id][2] = self.iterator
+            self.lines.store(self.curr_id, self.curr_line[:self.cursor_position+1],self.lines.fetch_prev(self.curr_id),self.iterator)
             self.curr_line = self.curr_line[self.cursor_position+1:]
             self.cursor_position = 0
             self.update_window_cols()
             self.prev_id = self.curr_id
 
-            if self.next_id in self.lines:
-                self.lines[self.next_id][1] = self.iterator
-            self.lines[self.iterator] = [self.curr_line, self.prev_id, self.next_id]
+            if self.lines.present(self.next_id):
+                self.lines.store(self.next_id, self.lines.fetch_line(self.next_id), self.iterator, self.lines.fetch_next(self.next_id))
+            self.lines.store(self.iterator, self.curr_line, self.prev_id, self.next_id)
             self.curr_id = self.iterator
             self.iterator += 1
-            self.update_window_rows(self.INSERT())
+            self.update_window_rows(self.INSERT)
         else:
             if len(self.curr_line) <= self.cursor_position:
                 self.curr_line.append(char)
@@ -163,7 +186,7 @@ class Model:
 
             self.cursor_position += 1
             self.update_window_cols()
-            self.lines[self.curr_id] = [self.curr_line, self.prev_id, self.next_id]
+            self.lines.store(self.curr_id, self.curr_line, self.prev_id, self.next_id)
 
     def delete(self) -> None:
         """Deletes char from current line of text. If it is at the end of the line and there 
@@ -174,13 +197,13 @@ class Model:
             self.cursor_position = len(prev_line)-1
             self.update_window_cols()
             self.prev_id = prev_prev_id
-            self.update_window_rows(self.DELETE())
+            self.update_window_rows(self.DELETE)
         else:
             self.curr_line = self.curr_line[:self.cursor_position-1] + self.curr_line[self.cursor_position:]
             if self.cursor_position > 0:
                 self.cursor_position -= 1
                 self.update_window_cols()
-        self.lines[self.curr_id] = [self.curr_line, self.prev_id, self.next_id]
+        self.lines.store(self.curr_id, self.curr_line, self.prev_id, self.next_id)
 
 class Controller:
     """TODO"""
@@ -212,17 +235,17 @@ def main():
     model.insert('b')
     model.insert('\n')
     assert model.curr_line == []
-    assert model.lines[0][0] == ['a','b']
+    assert model.lines.dict[0][0] == ['a','b']
     model.insert('c')
     model.insert('\n')
     model.insert('d')
     assert model.curr_line == ['d']
-    assert model.lines[0][0] == ['a','b']
-    assert model.lines[1][0] == ['c']
+    assert model.lines.dict[0][0] == ['a','b']
+    assert model.lines.dict[1][0] == ['c']
     model.left()
     model.delete()
     assert model.curr_line == ['c','d']
-    assert 1 not in model.lines
+    assert 1 not in model.lines.dict
     model.left()
     model.delete()
     assert model.curr_line == ['a','b','c','d']
