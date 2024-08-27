@@ -12,34 +12,34 @@ will be stored as:
 As new lines and text get added and removed, the data structure updates accordingly.
 """
 
+import curses
+
 class Lines:
     """Stores the text, the previous id, and the next id of each line."""
     def __init__(self) -> None:
         self.dict = {}
-    
+
     def store(self, curr_id, line, prev_id, next_id) -> None:
         self.dict[curr_id] = [line, prev_id, next_id]
 
     def fetch_all(self, key) -> list[list[str], int, int]:
         return self.dict[key]
-    
+
     def fetch_line(self, key) -> list[str]:
         return self.dict[key][0]
 
     def fetch_prev(self, key) -> list[str]:
         return self.dict[key][1]
-    
+
     def fetch_next(self, key) -> list[str]:
-        return self.dict[key][2]
-    
+            return self.dict[key][2]
+
     def pop(self, key) -> list[list[str], int, int]:
         return self.dict.pop(key)
-    
+
     def present(self, key) -> bool:
         return key in self.dict
     
-
-# import curses
 
 class Model:
     """
@@ -74,6 +74,8 @@ class Model:
 
     def update_window_cols(self) -> None:
         """Update the window's first column relative to the cursor."""
+        if self.cursor_position == 0:
+            self.top_window_col = 0
         if self.cursor_position > self.window_size[1]+self.top_window_col:
             self.top_window_col+=1
         elif self.cursor_position < self.top_window_col:
@@ -106,11 +108,14 @@ class Model:
         iterate_col = self.top_window_col
         for _ in range(self.window_size[0]):
             for i in range(iterate_col, iterate_col+self.window_size[1]):
-                if i in range(len(self.lines.fetch_line(iterate_row))):
+                if self.lines.present(iterate_row) and i in range(len(self.lines.fetch_line(iterate_row))):
                     out+=self.lines.fetch_line(iterate_row)[i]
                 else:
                     out+=" "
-            if iterate_row is not None:
+                if iterate_row == self.curr_id and self.cursor_position == i:
+                    out = out[:-1]
+                    out+=chr(219)
+            if self.lines.present(iterate_row):
                 iterate_row = self.lines.fetch_next(iterate_row)
             out +="\n"
         return out[:-1]
@@ -166,7 +171,7 @@ class Model:
         will store everything behind the cursor in lines and create a 
         new id for the current line."""
         if char == '\n':
-            self.lines.store(self.curr_id, self.curr_line[:self.cursor_position+1],self.lines.fetch_prev(self.curr_id),self.iterator)
+            self.lines.store(self.curr_id, self.curr_line[:self.cursor_position+1],self.prev_id,self.iterator)
             self.curr_line = self.curr_line[self.cursor_position+1:]
             self.cursor_position = 0
             self.update_window_cols()
@@ -191,13 +196,16 @@ class Model:
     def delete(self) -> None:
         """Deletes char from current line of text. If it is at the end of the line and there 
         is a previous line, it will merge the two lines."""
-        if self.cursor_position == 0 and self.prev_id is not None:
-            [prev_line, prev_prev_id, _] = self.lines.pop(self.prev_id)
-            self.curr_line = prev_line+self.curr_line
-            self.cursor_position = len(prev_line)-1
-            self.update_window_cols()
-            self.prev_id = prev_prev_id
-            self.update_window_rows(self.DELETE)
+        if self.cursor_position == 0:
+            if self.prev_id is not None:
+                [prev_line, prev_prev_id, _] = self.lines.pop(self.prev_id)
+                self.curr_line = prev_line+self.curr_line
+                self.cursor_position = len(prev_line)
+                self.prev_id = prev_prev_id
+                if self.lines.present(self.prev_id):
+                    self.lines.store(self.prev_id, self.lines.fetch_line(self.prev_id),self.lines.fetch_prev(self.prev_id),self.curr_id)
+                self.update_window_cols()
+                self.update_window_rows(self.DELETE)
         else:
             self.curr_line = self.curr_line[:self.cursor_position-1] + self.curr_line[self.cursor_position:]
             if self.cursor_position > 0:
@@ -207,6 +215,46 @@ class Model:
 
 class Controller:
     """TODO"""
+    def __init__(self, model:Model=Model(),view=curses.initscr()):
+        self.model = model
+        self.view = view
+    
+    def run(self):
+        self.view.keypad(True)
+        curses.noecho()
+        curses.cbreak()
+
+        self.view.addstr("Start typing! ")
+        self.view.refresh()
+
+
+        while True:
+            key_input = self.view.getch()
+            if key_input == curses.KEY_LEFT:
+                self.model.left()
+            elif key_input == curses.KEY_RIGHT:
+                self.model.right()
+            elif key_input == curses.KEY_ENTER:
+                self.model.insert('\n')
+            elif key_input == curses.KEY_BACKSPACE:
+                self.model.delete()
+            elif key_input == curses.KEY_UP:
+                self.model.up()
+            elif key_input == curses.KEY_DOWN:
+                self.model.down()
+            elif key_input == curses.KEY_F2:
+                break
+            else:
+                self.model.insert(chr(key_input))
+
+            self.view.erase()
+            self.view.addstr(self.model.print_window())
+            self.view.refresh()
+
+        curses.nocbreak()
+        self.view.keypad(False)
+        curses.echo()
+        curses.endwin()
 
 def main():
     """Testing"""
@@ -302,7 +350,16 @@ def main():
     model.insert('\n')
     assert model.top_window_row == 1
 
-    print("All tests pass")
+
+    model=Model(window_size=(5,5))
+    for char in "f\n\nf":
+        model.insert(char)
+    model.left()
+    model.delete()
+    assert model.lines.present(model.prev_id) and model.lines.present(model.lines.fetch_next(model.prev_id))
+
+    print("All tests pass\n")
+
 
 
 if __name__ == "__main__":
