@@ -111,7 +111,6 @@ class WindowedLines:
     The model for the text editor. Takes a lines class and adds a window.
     API supports up/down/left/right movement of cursor and insert/delete.
     TODO: Add highlighting.
-    TODO: Read/Write files.
     """
 
     # window update constants:
@@ -215,6 +214,33 @@ class WindowedLines:
         self.update_window_cols()
         self.update_window_rows(self.DELETE)
 
+    def write_file(self, file_name:str) -> None:
+        f = open(file_name ,"w", encoding="UTF-8")
+        f.write(f"{self.lines.cursor_position}\n{self.lines.prev_id}\n{self.lines.next_id}\n{self.lines.curr_id}\n{self.lines.iterator}\n{self.lines.dict}\n{self.lines.curr_line}\n{self.top_window_row}\n{self.top_window_col}")
+        f.close()
+
+    def read_file(self, file_name:str) -> None:
+        with open(file_name ,"r", encoding="UTF-8") as f:
+            params = f.readlines()
+        try:
+            next_id = int(params[2])
+        except ValueError:
+            next_id = None
+        try:
+            prev_id = int(params[1])
+        except ValueError:
+            prev_id = None
+
+        self.lines.cursor_position=int(params[0])
+        self.lines.prev_id=prev_id
+        self.lines.next_id=next_id
+        self.lines.curr_id=int(params[3])
+        self.lines.iterator=int(params[4])
+        self.lines.dict = eval(params[5])
+        self.lines.curr_line = list(params[6])
+        self.top_window_row = int(params[7])
+        self.top_window_col = int(params[8])
+
 class Controller:
     """The connection between the model and the view"""
     def __init__(self, model:WindowedLines=WindowedLines(),view=curses.initscr()):
@@ -223,11 +249,12 @@ class Controller:
 
     def run(self):
         "the loop connecting the model to user input, displayed using a curses view."
+        self.model.read_file("tst.txt")
         self.view.keypad(True)
         curses.noecho()
         curses.cbreak()
 
-        self.view.addstr("Start typing! ")
+        self.view.addstr(self.model.print_window())
         self.view.refresh()
 
 

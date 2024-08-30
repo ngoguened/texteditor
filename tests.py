@@ -1,6 +1,7 @@
 """Testing"""
 import unittest
 import text_editor
+import os
 
 model = text_editor.WindowedLines()
 class TestModel(unittest.TestCase):
@@ -59,51 +60,49 @@ class TestModel(unittest.TestCase):
 
     def test_window(self):
         """Test that the window works properly"""
-        model=text_editor.WindowedLines(window_size=(1,5))
-        assert model.top_window_row == 0 and model.top_window_col == 0
+        new_model=text_editor.WindowedLines(window_size=(1,5))
+        assert new_model.top_window_row == 0 and new_model.top_window_col == 0
         for char in "Hello\nWorld!":
-            model.insert(char)
+            new_model.insert(char)
 
-        assert model.top_window_col == 1
+        assert new_model.top_window_col == 1
         for _ in range(6):
-            model.left()
-        assert model.top_window_col == 0
+            new_model.left()
+        assert new_model.top_window_col == 0
 
-        model.up()
-        assert model.top_window_row == 0
-        model.up()
-        assert model.top_window_row == 0
-        model.down()
-        assert model.top_window_row == 1
-        model.delete()
-        assert model.top_window_row == 1
-        model.insert('\n')
-        assert model.top_window_row == 2
-        model.up()
-        assert model.top_window_row == 1
+        new_model.up()
+        assert new_model.top_window_row == 0
+        new_model.up()
+        assert new_model.top_window_row == 0
+        new_model.down()
+        assert new_model.top_window_row == 1
+        new_model.delete()
+        assert new_model.top_window_row == 1
+        new_model.insert('\n')
+        assert new_model.top_window_row == 2
+        new_model.up()
+        assert new_model.top_window_row == 1
 
-        model=text_editor.WindowedLines(window_size=(2,5))
+        new_model=text_editor.WindowedLines(window_size=(2,5))
         for char in "Hello\nthere,\nWorld!":
-            model.insert(char)
-        assert model.top_window_row == 1
-        model.up()
-        model.up()
-        assert model.top_window_row == 0
-        model.down()
+            new_model.insert(char)
+        assert new_model.top_window_row == 1
+        new_model.up()
+        new_model.up()
+        assert new_model.top_window_row == 0
+        new_model.down()
         for _ in range(5):
-            model.left()
-        model.delete()
-        assert model.top_window_row == 1
-        model.insert('\n')
-        assert model.top_window_row == 1
+            new_model.left()
+        new_model.delete()
+        assert new_model.top_window_row == 1
+        new_model.insert('\n')
+        assert new_model.top_window_row == 1
 
-
-        # model=text_editor.Model(window_size=(5,5))
-        # for char in "f\n\nf":
-        #     model.insert(char)
-        # model.left()
-        # model.delete()
-        # assert model.lines.present(model.prev_id) and model.lines.present(model.lines.fetch_next(model.prev_id))
+    def test_read_write(self):
+        model.write_file("tst.txt")
+        model.read_file("tst.txt")
+        assert model.lines.cursor_position == 1 and model.lines.prev_id == 4 and model.lines.next_id is None and model.lines.curr_id == 3 and model.lines.iterator == 5
+        os.remove("tst.txt")
 
 if __name__ == '__main__':
     unittest.main()
