@@ -84,6 +84,7 @@ class Lines:
             if len(self.curr_line) <= self.cursor_position:
                 self.curr_line.append(char)
             else:
+                self.curr_line = self.curr_line[:self.cursor_position] + [char] + self.curr_line[self.cursor_position:]
                 self.curr_line[self.cursor_position] = char
 
             self.cursor_position += 1
@@ -154,7 +155,6 @@ class WindowedLines:
         else:
             raise ValueError()
 
-
     def print_window(self) -> str:
         """Makes a string of the current window"""
         out=""
@@ -175,7 +175,6 @@ class WindowedLines:
                 iterate_row = self.lines.dict[iterate_row][2]
             out +="\n"
         return out[:-1]
-
 
     def right(self) -> None:
         """Moves the cursor right by shifting the cursor position right."""
@@ -218,7 +217,7 @@ class WindowedLines:
 
     def write_file(self, file_name:str) -> None:
         f = open(file_name ,"w", encoding="UTF-8")
-        f.write(f"{self.lines.cursor_position}\n{self.lines.prev_id}\n{self.lines.next_id}\n{self.lines.curr_id}\n{self.lines.iterator}\n{self.lines.dict}\n{self.lines.curr_line}\n{self.top_window_row}\n{self.top_window_col}")
+        f.write(f"{self.lines.cursor_position}\n{self.lines.prev_id}\n{self.lines.next_id}\n{self.lines.curr_id}\n{self.lines.iterator}\n{self.lines.dict}\n{self.lines.curr_line}\n{self.top_window_row}\n{self.top_window_col}\n")
         f.close()
 
     def read_file(self, file_name:str) -> None:
