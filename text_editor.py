@@ -38,7 +38,7 @@ class Lines:
         """Moves the cursor right by shifting the cursor position right."""
         if self.cursor_position < len(self.curr_line):
             self.cursor_position += 1
-    
+
     def up(self) -> None:
         """Moves the cursor up by retrieving the data for prev_id and 
         updating relevant fields."""
@@ -143,7 +143,7 @@ class WindowedLines:
         elif operation in [self.INSERT,self.DOWN]:
             tmp = self.top_window_row
             for _ in range(self.window_size[0]-1):
-                if tmp is None or self.lines.dict[tmp][2] is None or tmp == self.lines.curr_id:
+                if tmp is None or tmp not in self.lines.dict or self.lines.dict[tmp][2] is None or tmp == self.lines.curr_id:
                     return
                 tmp = self.lines.dict[tmp][2]
             if tmp != self.lines.curr_id:
@@ -160,15 +160,17 @@ class WindowedLines:
         out=""
         iterate_row = self.top_window_row
         iterate_col = self.top_window_col
+        flag = True
         for _ in range(self.window_size[0]):
             for i in range(iterate_col, iterate_col+self.window_size[1]):
                 if iterate_row in self.lines.dict and i in range(len(self.lines.dict[iterate_row][0])):
                     out+=self.lines.dict[iterate_row][0][i]
                 else:
                     out+=" "
-                if iterate_row == self.lines.curr_id and self.lines.cursor_position == i:
+                if flag and iterate_row == self.lines.curr_id and self.lines.cursor_position == i:
                     out = out[:-1]
                     out+=chr(219)
+                    flag = False
             if iterate_row in self.lines.dict:
                 iterate_row = self.lines.dict[iterate_row][2]
             out +="\n"
@@ -247,16 +249,19 @@ class Controller:
         self.model = model
         self.view = view
 
-    def run(self):
+    def run(self, filename:str=""):
         "the loop connecting the model to user input, displayed using a curses view."
-        self.model.read_file("tst.txt")
         self.view.keypad(True)
         curses.noecho()
         curses.cbreak()
 
-        self.view.addstr(self.model.print_window())
+        if filename != "":
+            self.model.read_file(filename)
+            self.view.addstr(self.model.print_window())
+        else:
+            self.view.addstr("")
+        
         self.view.refresh()
-
 
         while True:
             key_input = self.view.getch()
