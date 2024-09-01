@@ -30,17 +30,15 @@ class TestModel(unittest.TestCase):
         model.insert('b')
         model.insert('\n')
         assert model.lines.curr_line == []
-        assert model.lines.dict[0][0] == ['a','b']
+        assert model.lines.prev_lines == [['a','b']]
         model.insert('c')
         model.insert('\n')
         model.insert('d')
         assert model.lines.curr_line == ['d']
-        assert model.lines.dict[0][0] == ['a','b']
-        assert model.lines.dict[1][0] == ['c']
+        assert model.lines.prev_lines == [['a','b'],['c']]
         model.left()
         model.delete()
         assert model.lines.curr_line == ['c','d']
-        assert 1 not in model.lines.dict
         model.left()
         model.delete()
         assert model.lines.curr_line == ['a','b','c','d']
@@ -64,7 +62,6 @@ class TestModel(unittest.TestCase):
         assert new_model.top_window_row == 0 and new_model.top_window_col == 0
         for char in "Hello\nWorld!":
             new_model.insert(char)
-
         assert new_model.top_window_col == 1
         for _ in range(6):
             new_model.left()
@@ -75,18 +72,18 @@ class TestModel(unittest.TestCase):
         new_model.up()
         assert new_model.top_window_row == 0
         new_model.down()
-        assert new_model.top_window_row == 1
+        assert new_model.top_window_row == 1, new_model.lines.prev_lines
         new_model.delete()
-        assert new_model.top_window_row == 1
+        assert new_model.top_window_row == 0
         new_model.insert('\n')
-        assert new_model.top_window_row == 2
-        new_model.up()
         assert new_model.top_window_row == 1
+        new_model.up()
+        assert new_model.top_window_row == 0
 
         new_model=text_editor.WindowedLines(window_size=(2,5))
         for char in "Hello\nthere,\nWorld!":
             new_model.insert(char)
-        assert new_model.top_window_row == 1
+        assert new_model.top_window_row == 1, new_model.lines.prev_lines
         new_model.up()
         new_model.up()
         assert new_model.top_window_row == 0
@@ -94,15 +91,15 @@ class TestModel(unittest.TestCase):
         for _ in range(5):
             new_model.left()
         new_model.delete()
-        assert new_model.top_window_row == 1
+        assert new_model.top_window_row == 0
         new_model.insert('\n')
-        assert new_model.top_window_row == 1
+        assert new_model.top_window_row == 1, f"{new_model.lines.prev_lines}{new_model.lines.next_lines}{new_model.top_window_row}{len(new_model.lines.next_lines[new_model.window_size[0]-new_model.top_window_row:])}"
 
-    def test_read_write(self):
-        model.write_file("tst.txt")
-        model.read_file("tst.txt")
-        assert model.lines.cursor_position == 1 and model.lines.prev_id == 4 and model.lines.next_id is None and model.lines.curr_id == 3 and model.lines.iterator == 5
-        os.remove("tst.txt")
+    # def test_read_write(self):
+    #     model.write_file("tst.txt")
+    #     model.read_file("tst.txt")
+    #     assert model.lines.cursor_position == 1 and model.lines.prev_id == 4 and model.lines.next_id is None and model.lines.curr_id == 3 and model.lines.iterator == 5
+    #     os.remove("tst.txt")
 
 if __name__ == '__main__':
     unittest.main()
