@@ -98,13 +98,15 @@ class WindowedLines:
             self.top_window_row = len(self.lines.prev_lines)
         elif self.window_size[0] < len(self.lines.prev_lines[self.top_window_row:])+len(self.lines.next_lines[:self.window_size[0]-self.top_window_row-1])+1:
             self.top_window_row+=1
+        # while self.top_window_row > 0 and self.window_size[0] > len(self.lines.next_lines[:self.window_size[0]-self.top_window_row-1]):
+        #     self.top_window_row-=1
 
     def print_window(self) -> str:
         """Makes a string of the current window"""
         out=""
         prev_lines_window = self.lines.prev_lines[self.top_window_row:]
         curr_line_and_cursor = [self.lines.curr_line]
-        next_lines_window = self.lines.next_lines[:self.window_size[0]-self.top_window_row-1]
+        next_lines_window = self.lines.next_lines[:self.window_size[0]-self.top_window_row][::-1][:-1]
 
         for line in prev_lines_window + curr_line_and_cursor + next_lines_window:
             windowed_line=''.join(line[self.top_window_col:])
@@ -153,33 +155,30 @@ class WindowedLines:
         self.update_window_cols()
         self.update_window_rows()
 
-    # def write_file(self, file_name:str) -> None:
-    #     f = open(file_name ,"w", encoding="UTF-8")
-    #     f.write(f"{self.lines.cursor_position}\n{self.lines.prev_id}\n{self.lines.next_id}\n{self.lines.curr_id}\n{self.lines.iterator}\n{self.lines.dict}\n{self.lines.curr_line}\n{self.top_window_row}\n{self.top_window_col}\n")
-    #     f.close()
+    def write_file(self, file_name:str) -> None:
+        f = open(file_name ,"w", encoding="UTF-8")
+        for line in self.lines.prev_lines:
+            f.write(''.join(line)+'\n')
+        f.write(''.join(self.lines.curr_line))
+        if self.lines.next_lines:
+            f.write('\n')
+        for line in self.lines.next_lines[:-1]:
+            f.write(''.join(line)+'\n')
+        if self.lines.next_lines:
+            f.write(''.join(self.lines.next_lines[-1]))
+        f.close()
 
-    # def read_file(self, file_name:str) -> None:
-    #     with open(file_name ,"r", encoding="UTF-8") as f:
-    #         params = f.readlines()
-    #     try:
-    #         next_id = int(params[2])
-    #     except ValueError:
-    #         next_id = None
-    #     try:
-    #         prev_id = int(params[1])
-    #     except ValueError:
-    #         prev_id = None
+    def read_file(self, file_name:str) -> None:
+        with open(file_name ,"r", encoding="UTF-8") as f:
+            lines = f.readlines()
+        lines = [l.translate({ord('\n'): None}) for l in lines]
+        print(lines)
 
-    #     self.lines.cursor_position=int(params[0])
-    #     self.lines.prev_id=prev_id
-    #     self.lines.next_id=next_id
-    #     self.lines.curr_id=int(params[3])
-    #     self.lines.iterator=int(params[4])
-    #     self.lines.dict = eval(params[5])
-    #     self.lines.curr_line = list(params[6])
-    #     self.top_window_row = int(params[7])
-    #     self.top_window_col = int(params[8])
+        self.lines.curr_line, self.lines.next_lines = list(lines[0]), [list(l) for l in lines[1:]]
+        self.lines.prev_lines = []
+        self.lines.cursor_position = 0
 
+        
 class Controller:
     """The connection between the model and the view"""
     def __init__(self, model:WindowedLines=WindowedLines(),view=curses.initscr()):

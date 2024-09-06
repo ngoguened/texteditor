@@ -93,13 +93,24 @@ class TestModel(unittest.TestCase):
         new_model.delete()
         assert new_model.top_window_row == 0
         new_model.insert('\n')
-        assert new_model.top_window_row == 1, f"{new_model.lines.prev_lines}{new_model.lines.next_lines}{new_model.top_window_row}{len(new_model.lines.next_lines[new_model.window_size[0]-new_model.top_window_row:])}"
+        assert new_model.top_window_row == 1, f"{len(new_model.lines.prev_lines[new_model.top_window_row:])+len(new_model.lines.next_lines[:new_model.window_size[0]-new_model.top_window_row-1])+1}"
 
-    # def test_read_write(self):
-    #     model.write_file("tst.txt")
-    #     model.read_file("tst.txt")
-    #     assert model.lines.cursor_position == 1 and model.lines.prev_id == 4 and model.lines.next_id is None and model.lines.curr_id == 3 and model.lines.iterator == 5
-    #     os.remove("tst.txt")
+        new_model=text_editor.WindowedLines(window_size=(3,5))
+        for char in "a\nb\nc\nd":
+            new_model.insert(char)
+        new_model.up()
+        new_model.up()
+        new_model.up()
+        new_model.up()
+        new_model.up()
+
+    def test_read_write(self):
+        model.write_file("tst.txt")
+        model.read_file("tst.txt")
+        assert model.lines.curr_line == ['a','b','c','d'], model.lines.curr_line
+        assert model.lines.next_lines == [['e'],['f']], model.lines.next_lines
+        
+        os.remove("tst.txt")
 
 if __name__ == '__main__':
     unittest.main()
