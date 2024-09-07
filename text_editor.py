@@ -4,23 +4,65 @@ The data structure is a list of previous lines and next lines.
 
 import curses
 
-class Lines:
+class WindowedLines:
     """Stores the current line, previous lines, next lines, and the cursor position."""
-    def __init__(self, cursor_position=0) -> None:
+    def __init__(self, cursor_position=0, window_size=(10,16)) -> None:
         self.curr_line = []
         self.cursor_position = cursor_position
         self.prev_lines= []
         self.next_lines = []
 
+        self.window_size = window_size
+        self.top_window_row = 0
+        self.top_window_col = 0
+
+    def update_window_cols(self) -> None:
+        """Update the window's first column relative to the cursor."""
+        if self.cursor_position > self.window_size[1]+self.top_window_col:
+            self.top_window_col += self.cursor_position-(self.window_size[1]+self.top_window_col)
+        elif self.cursor_position < self.top_window_col:
+            self.top_window_col -= self.top_window_col-self.cursor_position
+        while self.top_window_col > 0 and self.window_size[1] > self.cursor_position-self.top_window_col:
+            self.top_window_col-=1
+
+    def update_window_rows(self) -> None:
+        """Update the window's first row relative to row-changing operations."""
+
+        if self.top_window_row > len(self.prev_lines):
+            self.top_window_row = len(self.prev_lines)
+        elif self.window_size[0] < len(self.prev_lines[self.top_window_row:])+len(self.next_lines[:self.window_size[0]-self.top_window_row-1])+1:
+            self.top_window_row+=1
+        # while self.top_window_row > 0 and self.window_size[0] > len(self.next_lines[:self.window_size[0]-self.top_window_row-1]):
+        #     self.top_window_row-=1
+
+    def print_window(self) -> str:
+        """Makes a string of the current window"""
+        out=""
+        prev_lines_window = self.prev_lines[self.top_window_row:]
+        curr_line_and_cursor = [self.curr_line]
+        next_lines_window = self.next_lines[:self.window_size[0]-self.top_window_row][::-1][:-1]
+
+        for line in prev_lines_window + curr_line_and_cursor + next_lines_window:
+            windowed_line=''.join(line[self.top_window_col:])
+            if len(windowed_line) > self.window_size[1]:
+                windowed_line = windowed_line[:self.window_size[1]]
+            else:
+                while len(windowed_line) < self.window_size[1]:
+                    windowed_line+=" "
+            out+=(windowed_line+"\n")
+        return out[:-1]
+
     def left(self) -> None:
         """Moves the cursor left by shifting the cursor position left."""
         if self.cursor_position > 0:
             self.cursor_position -= 1
+        self.update_window_cols()
 
     def right(self) -> None:
         """Moves the cursor right by shifting the cursor position right."""
         if self.cursor_position < len(self.curr_line):
             self.cursor_position += 1
+        self.update_window_cols()
 
     def up(self) -> None:
         """Moves the cursor up by retrieving the next line from next_lines."""
@@ -30,6 +72,8 @@ class Lines:
             self.cursor_position = min(len(self.curr_line), self.cursor_position)
         else:
             self.cursor_position = 0
+        self.update_window_cols()
+        self.update_window_rows()
 
     def down(self) -> None:
         """Moves the cursor down by retrieving the previous lines from prev_lines."""
@@ -39,6 +83,8 @@ class Lines:
             self.cursor_position = min(len(self.curr_line), self.cursor_position)
         else:
             self.cursor_position = len(self.curr_line)
+        self.update_window_cols()
+        self.update_window_rows()
 
     def insert(self, char='') -> None:
         """Inserts char to the current line of text. If the char is \n, it 
@@ -55,6 +101,8 @@ class Lines:
                 self.curr_line[self.cursor_position] = char
 
             self.cursor_position += 1
+        self.update_window_cols()
+        self.update_window_rows()
 
     def delete(self) -> None:
         """Deletes char from current line of text. If it is at the end of the line and there 
@@ -67,117 +115,30 @@ class Lines:
         else:
             self.curr_line = self.curr_line[:self.cursor_position-1] + self.curr_line[self.cursor_position:]
             self.cursor_position -= 1
-
-class WindowedLines:
-    """
-    The model for the text editor. Takes a lines class and adds a window.
-    API supports up/down/left/right movement of cursor and insert/delete.
-    TODO: Add highlighting.
-    """
-
-    def __init__(self, window_size=(10,16)) -> None:
-        self.lines = Lines()
-
-        self.window_size = window_size
-        self.top_window_row = 0
-        self.top_window_col = 0
-
-    def update_window_cols(self) -> None:
-        """Update the window's first column relative to the cursor."""
-        if self.lines.cursor_position > self.window_size[1]+self.top_window_col:
-            self.top_window_col += self.lines.cursor_position-(self.window_size[1]+self.top_window_col)
-        elif self.lines.cursor_position < self.top_window_col:
-            self.top_window_col -= self.top_window_col-self.lines.cursor_position
-        while self.top_window_col > 0 and self.window_size[1] > self.lines.cursor_position-self.top_window_col:
-            self.top_window_col-=1
-
-    def update_window_rows(self) -> None:
-        """Update the window's first row relative to row-changing operations."""
-
-        if self.top_window_row > len(self.lines.prev_lines):
-            self.top_window_row = len(self.lines.prev_lines)
-        elif self.window_size[0] < len(self.lines.prev_lines[self.top_window_row:])+len(self.lines.next_lines[:self.window_size[0]-self.top_window_row-1])+1:
-            self.top_window_row+=1
-        # while self.top_window_row > 0 and self.window_size[0] > len(self.lines.next_lines[:self.window_size[0]-self.top_window_row-1]):
-        #     self.top_window_row-=1
-
-    def print_window(self) -> str:
-        """Makes a string of the current window"""
-        out=""
-        prev_lines_window = self.lines.prev_lines[self.top_window_row:]
-        curr_line_and_cursor = [self.lines.curr_line]
-        next_lines_window = self.lines.next_lines[:self.window_size[0]-self.top_window_row][::-1][:-1]
-
-        for line in prev_lines_window + curr_line_and_cursor + next_lines_window:
-            windowed_line=''.join(line[self.top_window_col:])
-            if len(windowed_line) > self.window_size[1]:
-                windowed_line = windowed_line[:self.window_size[1]]
-            else:
-                while len(windowed_line) < self.window_size[1]:
-                    windowed_line+=" "
-            out+=(windowed_line+"\n")
-        return out[:-1]
-
-
-    def right(self) -> None:
-        """Moves the cursor right by shifting the cursor position right."""
-        self.lines.right()
-        self.update_window_cols()
-
-    def left(self) -> None:
-        """Moves the cursor left by shifting the cursor position left."""
-        self.lines.left()
-        self.update_window_cols()
-
-    def up(self) -> None:
-        """Moves the cursor up by retrieving the next line from next_lines."""
-        self.lines.up()
-        self.update_window_cols()
-        self.update_window_rows()
-
-    def down(self) -> None:
-        """Moves the cursor down by retrieving the previous lines from prev_lines."""
-        self.lines.down()
-        self.update_window_cols()
-        self.update_window_rows()
-
-    def insert(self, char='') -> None:
-        """Inserts char to the current line of text. If the char is \n, it 
-        will store everything behind the cursor in prev_lines."""
-        self.lines.insert(char)
-        self.update_window_cols()
-        self.update_window_rows()
-
-    def delete(self) -> None:
-        """Deletes char from current line of text. If it is at the end of the line and there 
-        is a previous line, it will merge the two lines."""
-        self.lines.delete()
         self.update_window_cols()
         self.update_window_rows()
 
     def write_file(self, file_name:str) -> None:
         f = open(file_name ,"w", encoding="UTF-8")
-        for line in self.lines.prev_lines:
+        for line in self.prev_lines:
             f.write(''.join(line)+'\n')
-        f.write(''.join(self.lines.curr_line))
-        if self.lines.next_lines:
+        f.write(''.join(self.curr_line))
+        if self.next_lines:
             f.write('\n')
-        for line in self.lines.next_lines[:-1]:
+        for line in self.next_lines[:-1]:
             f.write(''.join(line)+'\n')
-        if self.lines.next_lines:
-            f.write(''.join(self.lines.next_lines[-1]))
+        if self.next_lines:
+            f.write(''.join(self.next_lines[-1]))
         f.close()
 
     def read_file(self, file_name:str) -> None:
         with open(file_name ,"r", encoding="UTF-8") as f:
             lines = f.readlines()
         lines = [l.translate({ord('\n'): None}) for l in lines]
-        print(lines)
 
-        self.lines.curr_line, self.lines.next_lines = list(lines[0]), [list(l) for l in lines[1:]]
-        self.lines.prev_lines = []
-        self.lines.cursor_position = 0
-
+        self.curr_line, self.next_lines = list(lines[0]), [list(l) for l in lines[1:]]
+        self.prev_lines = []
+        self.cursor_position = 0
         
 class Controller:
     """The connection between the model and the view"""
