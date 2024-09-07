@@ -10,51 +10,51 @@ class TestModel(unittest.TestCase):
     def test_insert_delete(self):
         """check insert and delete work correctly"""
         model.insert('a')
-        assert model.lines.curr_line == ['a']
+        assert model.curr_line == ['a']
         model.insert('b')
-        assert model.lines.curr_line == ['a','b']
+        assert model.curr_line == ['a','b']
         model.insert('c')
-        assert model.lines.curr_line == ['a','b','c']
+        assert model.curr_line == ['a','b','c']
         model.delete()
-        assert model.lines.curr_line == ['a','b']
+        assert model.curr_line == ['a','b']
         model.delete()
-        assert model.lines.curr_line == ['a']
+        assert model.curr_line == ['a']
         model.delete()
-        assert model.lines.curr_line == []
+        assert model.curr_line == []
         model.delete()
-        assert model.lines.curr_line == [] 
+        assert model.curr_line == [] 
 
     def test_lines(self):
         """check line storage works correctly"""
         model.insert('a')
         model.insert('b')
         model.insert('\n')
-        assert model.lines.curr_line == []
-        assert model.lines.prev_lines == [['a','b']]
+        assert model.curr_line == []
+        assert model.prev_lines == [['a','b']]
         model.insert('c')
         model.insert('\n')
         model.insert('d')
-        assert model.lines.curr_line == ['d']
-        assert model.lines.prev_lines == [['a','b'],['c']]
+        assert model.curr_line == ['d']
+        assert model.prev_lines == [['a','b'],['c']]
         model.left()
         model.delete()
-        assert model.lines.curr_line == ['c','d']
+        assert model.curr_line == ['c','d']
         model.left()
         model.delete()
-        assert model.lines.curr_line == ['a','b','c','d']
+        assert model.curr_line == ['a','b','c','d']
 
         model.down()
         model.insert('\n')
         model.insert('f')
         model.up()
-        assert model.lines.curr_line == ['a','b','c','d']
-        while model.lines.cursor_position != 4:
+        assert model.curr_line == ['a','b','c','d']
+        while model.cursor_position != 4:
             model.right()
         model.insert('\n')
         model.insert('e')
-        assert model.lines.curr_line == ['e']
+        assert model.curr_line == ['e']
         model.down()
-        assert model.lines.curr_line == ['f']
+        assert model.curr_line == ['f']
 
     def test_window(self):
         """Test that the window works properly"""
@@ -72,7 +72,7 @@ class TestModel(unittest.TestCase):
         new_model.up()
         assert new_model.top_window_row == 0
         new_model.down()
-        assert new_model.top_window_row == 1, new_model.lines.prev_lines
+        assert new_model.top_window_row == 1, new_model.prev_lines
         new_model.delete()
         assert new_model.top_window_row == 0
         new_model.insert('\n')
@@ -83,7 +83,7 @@ class TestModel(unittest.TestCase):
         new_model=text_editor.WindowedLines(window_size=(2,5))
         for char in "Hello\nthere,\nWorld!":
             new_model.insert(char)
-        assert new_model.top_window_row == 1, new_model.lines.prev_lines
+        assert new_model.top_window_row == 1, new_model.prev_lines
         new_model.up()
         new_model.up()
         assert new_model.top_window_row == 0
@@ -93,7 +93,7 @@ class TestModel(unittest.TestCase):
         new_model.delete()
         assert new_model.top_window_row == 0
         new_model.insert('\n')
-        assert new_model.top_window_row == 1, f"{len(new_model.lines.prev_lines[new_model.top_window_row:])+len(new_model.lines.next_lines[:new_model.window_size[0]-new_model.top_window_row-1])+1}"
+        assert new_model.top_window_row == 1, f"{len(new_model.prev_lines[new_model.top_window_row:])+len(new_model.next_lines[:new_model.window_size[0]-new_model.top_window_row-1])+1}"
 
         new_model=text_editor.WindowedLines(window_size=(3,5))
         for char in "a\nb\nc\nd":
@@ -107,8 +107,8 @@ class TestModel(unittest.TestCase):
     def test_read_write(self):
         model.write_file("tst.txt")
         model.read_file("tst.txt")
-        assert model.lines.curr_line == ['a','b','c','d'], model.lines.curr_line
-        assert model.lines.next_lines == [['e'],['f']], model.lines.next_lines
+        assert model.curr_line == ['a','b','c','d'], model.curr_line
+        assert model.next_lines == [['e'],['f']], model.next_lines
         
         os.remove("tst.txt")
 
