@@ -112,6 +112,26 @@ class TestModel(unittest.TestCase):
         
         os.remove("tst.txt")
 
+    def test_cursor_snapshot(self):
+        new_model=text_editor.WindowedLines()
+        for char in "Hello\nthere,\nWorld!":
+            new_model.insert(char)
+        assert new_model.cursor_snapshot is None
+        new_model.take_cursor_snapshot()
+        assert new_model.cursor_snapshot == [2, 6]
+
+        for _ in range(6):
+            new_model.left()
+        new_model.delete()
+        assert new_model.cursor_snapshot is None
+        assert new_model.curr_line == [], new_model.curr_line
+        new_model.insert('a')
+        new_model.left()
+        new_model.take_cursor_snapshot()
+        new_model.right()
+        new_model.delete()
+        assert new_model.curr_line == [], new_model.curr_line
+
 if __name__ == '__main__':
     unittest.main()
     print("All tests pass\n")
