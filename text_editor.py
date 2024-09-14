@@ -55,29 +55,27 @@ class WindowedLines:
         return out[:-1]
     
     def take_cursor_snapshot(self) -> None:
-        self.cursor_snapshot = [len(self.prev_lines), self.cursor_position]
+        self.cursor_snapshot = [len(self.prev_lines), self.cursor_position, self.curr_line]
 
     def clear_highlight(self) -> None:
-        left = right = False
-        saved_line = ""
-        while self.cursor_snapshot[0] > len(self.prev_lines):
-            left = True
-            saved_line = self.next_lines.pop()
-            self.cursor_snapshot[0] -= 1
+        if self.cursor_snapshot[0] > len(self.prev_lines):
+            keep_right = self.cursor_snapshot[2][self.cursor_snapshot[1]:]
+            while self.cursor_snapshot[0] > len(self.prev_lines):
+                self.next_lines.pop()
+                self.cursor_snapshot[0] -= 1
+            self.curr_line = self.curr_line[:self.cursor_position] + keep_right
 
-        while self.cursor_snapshot[0] < len(self.prev_lines):
-            right = True
-            saved_line = self.prev_lines.pop()
+        if self.cursor_snapshot[0] < len(self.prev_lines):
+            keep_left = self.cursor_snapshot[2][:self.cursor_snapshot[1]]
+            while self.cursor_snapshot[0] < len(self.prev_lines):
+                self.prev_lines.pop()
+            self.curr_line = keep_left + self.curr_line[self.cursor_position:]
 
-        if left:
-            self.curr_line = saved_line[:self.cursor_snapshot[1]] + self.curr_line[self.cursor_position+1:]
-        elif right:
-            self.curr_line =  self.curr_line[:self.cursor_position] + saved_line[:self.cursor_snapshot[1]+1:]
         else:
             if self.cursor_snapshot[1] > self.cursor_position:
-                self.curr_line = self.curr_line[:self.cursor_position] + self.curr_line[self.cursor_snapshot[1]+1:]
+                self.curr_line = self.curr_line[:self.cursor_position] + self.curr_line[self.cursor_snapshot[1]:]
             else:
-                self.curr_line = self.curr_line[:self.cursor_snapshot[1]] + self.curr_line[self.cursor_position+1:]
+                self.curr_line = self.curr_line[:self.cursor_snapshot[1]] + self.curr_line[self.cursor_position:]
         self.cursor_position = min(self.cursor_position, self.cursor_snapshot[1])
         self.cursor_snapshot = None
 
@@ -218,6 +216,7 @@ class Controller:
 
             self.view.erase()
             self.view.addstr(self.model.print_window())
+            self.view.move(len(self.model.prev_lines),self.model.cursor_position)
             self.view.refresh()
 
         curses.nocbreak()

@@ -118,7 +118,7 @@ class TestModel(unittest.TestCase):
             new_model.insert(char)
         assert new_model.cursor_snapshot is None
         new_model.take_cursor_snapshot()
-        assert new_model.cursor_snapshot == [2, 6]
+        assert new_model.cursor_snapshot == [2, 6, new_model.curr_line]
 
         for _ in range(6):
             new_model.left()
