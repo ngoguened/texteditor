@@ -103,6 +103,9 @@ class TestModel(unittest.TestCase):
         new_model.up()
         new_model.up()
         new_model.up()
+        assert new_model.print_window() == "a  \nb  \nc  \n", new_model.print_window()
+
+
 
     def test_read_write(self):
         model.write_file("tst.txt")
