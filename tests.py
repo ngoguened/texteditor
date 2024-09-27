@@ -95,7 +95,7 @@ class TestModel(unittest.TestCase):
         new_model.insert('\n')
         assert new_model.top_window_row == 1, f"{len(new_model.prev_lines[new_model.top_window_row:])+len(new_model.next_lines[:new_model.window_size[0]-new_model.top_window_row-1])+1}"
 
-        new_model=text_editor.WindowedLines(window_size=(3,5))
+        new_model=text_editor.WindowedLines(window_size=(10,5))
         for char in "a\nb\nc\nd":
             new_model.insert(char)
         new_model.up()
@@ -103,6 +103,9 @@ class TestModel(unittest.TestCase):
         new_model.up()
         new_model.up()
         new_model.up()
+        assert new_model.print_window() == "a    \nb    \nc    \nd    ", [[new_model.curr_line],new_model.next_lines[:new_model.window_size[0]-new_model.top_window_row][::-1]]
+
+
 
     def test_read_write(self):
         model.write_file("tst.txt")
@@ -111,6 +114,26 @@ class TestModel(unittest.TestCase):
         assert model.next_lines == [['e'],['f']], model.next_lines
         
         os.remove("tst.txt")
+
+    def test_cursor_snapshot(self):
+        new_model=text_editor.WindowedLines()
+        for char in "Hello\nthere,\nWorld!":
+            new_model.insert(char)
+        assert new_model.cursor_snapshot is None
+        new_model.take_cursor_snapshot()
+        assert new_model.cursor_snapshot == [2, 6, new_model.curr_line]
+
+        for _ in range(6):
+            new_model.left()
+        new_model.delete()
+        assert new_model.cursor_snapshot is None
+        assert new_model.curr_line == [], new_model.curr_line
+        new_model.insert('a')
+        new_model.left()
+        new_model.take_cursor_snapshot()
+        new_model.right()
+        new_model.delete()
+        assert new_model.curr_line == [], new_model.curr_line
 
 if __name__ == '__main__':
     unittest.main()

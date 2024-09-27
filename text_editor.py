@@ -16,6 +16,8 @@ class WindowedLines:
         self.top_window_row = 0
         self.top_window_col = 0
 
+        self.cursor_snapshot = None
+
     def update_window_cols(self) -> None:
         """Update the window's first column relative to the cursor."""
         if self.cursor_position > self.window_size[1]+self.top_window_col:
@@ -40,7 +42,7 @@ class WindowedLines:
         out=""
         prev_lines_window = self.prev_lines[self.top_window_row:]
         curr_line_and_cursor = [self.curr_line]
-        next_lines_window = self.next_lines[:self.window_size[0]-self.top_window_row][::-1][:-1]
+        next_lines_window = self.next_lines[:self.window_size[0]-self.top_window_row][::-1]
 
         for line in prev_lines_window + curr_line_and_cursor + next_lines_window:
             windowed_line=''.join(line[self.top_window_col:])
@@ -51,6 +53,32 @@ class WindowedLines:
                     windowed_line+=" "
             out+=(windowed_line+"\n")
         return out[:-1]
+    
+    def take_cursor_snapshot(self) -> None:
+        self.cursor_snapshot = [len(self.prev_lines), self.cursor_position, self.curr_line]
+
+    def clear_highlight(self) -> None:
+        if self.cursor_snapshot[0] > len(self.prev_lines):
+            keep_right = self.cursor_snapshot[2][self.cursor_snapshot[1]:]
+            while self.cursor_snapshot[0] > len(self.prev_lines):
+                self.next_lines.pop()
+                self.cursor_snapshot[0] -= 1
+            self.curr_line = self.curr_line[:self.cursor_position] + keep_right
+
+        if self.cursor_snapshot[0] < len(self.prev_lines):
+            keep_left = self.cursor_snapshot[2][:self.cursor_snapshot[1]]
+            while self.cursor_snapshot[0] < len(self.prev_lines):
+                self.prev_lines.pop()
+            self.curr_line = keep_left + self.curr_line[self.cursor_position:]
+
+        else:
+            if self.cursor_snapshot[1] > self.cursor_position:
+                self.curr_line = self.curr_line[:self.cursor_position] + self.curr_line[self.cursor_snapshot[1]:]
+            else:
+                self.curr_line = self.curr_line[:self.cursor_snapshot[1]] + self.curr_line[self.cursor_position:]
+        self.cursor_position = min(self.cursor_position, self.cursor_snapshot[1])
+        self.cursor_snapshot = None
+
 
     def left(self) -> None:
         """Moves the cursor left by shifting the cursor position left."""
@@ -89,6 +117,9 @@ class WindowedLines:
     def insert(self, char='') -> None:
         """Inserts char to the current line of text. If the char is \n, it 
         will store everything behind the cursor in prev_lines."""
+        if self.cursor_snapshot:
+            self.clear_highlight()
+
         if char == '\n':
             self.prev_lines.append(self.curr_line[:self.cursor_position])
             self.curr_line = self.curr_line[self.cursor_position:]
@@ -107,6 +138,10 @@ class WindowedLines:
     def delete(self) -> None:
         """Deletes char from current line of text. If it is at the end of the line and there 
         is a previous line, it will merge the two lines."""
+        if self.cursor_snapshot:
+            self.clear_highlight()
+            return
+        
         if self.cursor_position == 0:
             if self.prev_lines:
                 prev_line = self.prev_lines.pop()
@@ -175,12 +210,13 @@ class Controller:
             elif key_input == curses.KEY_DOWN:
                 self.model.down()
             elif key_input == curses.KEY_F2:
-                break
+                self.model.take_cursor_snapshot()
             else:
                 self.model.insert(chr(key_input))
 
             self.view.erase()
             self.view.addstr(self.model.print_window())
+            self.view.move(len(self.model.prev_lines),min(self.model.cursor_position, self.model.window_size[1]))
             self.view.refresh()
 
         curses.nocbreak()
