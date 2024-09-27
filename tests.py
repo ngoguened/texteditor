@@ -95,7 +95,7 @@ class TestModel(unittest.TestCase):
         new_model.insert('\n')
         assert new_model.top_window_row == 1, f"{len(new_model.prev_lines[new_model.top_window_row:])+len(new_model.next_lines[:new_model.window_size[0]-new_model.top_window_row-1])+1}"
 
-        new_model=text_editor.WindowedLines(window_size=(3,5))
+        new_model=text_editor.WindowedLines(window_size=(10,5))
         for char in "a\nb\nc\nd":
             new_model.insert(char)
         new_model.up()
@@ -103,7 +103,7 @@ class TestModel(unittest.TestCase):
         new_model.up()
         new_model.up()
         new_model.up()
-        assert new_model.print_window() == "a  \nb  \nc  \n", new_model.print_window()
+        assert new_model.print_window() == "a    \nb    \nc    \nd    ", [[new_model.curr_line],new_model.next_lines[:new_model.window_size[0]-new_model.top_window_row][::-1]]
 
 
 

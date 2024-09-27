@@ -42,7 +42,7 @@ class WindowedLines:
         out=""
         prev_lines_window = self.prev_lines[self.top_window_row:]
         curr_line_and_cursor = [self.curr_line]
-        next_lines_window = self.next_lines[:self.window_size[0]-self.top_window_row][::-1][:-1]
+        next_lines_window = self.next_lines[:self.window_size[0]-self.top_window_row][::-1]
 
         for line in prev_lines_window + curr_line_and_cursor + next_lines_window:
             windowed_line=''.join(line[self.top_window_col:])
@@ -216,7 +216,7 @@ class Controller:
 
             self.view.erase()
             self.view.addstr(self.model.print_window())
-            self.view.move(len(self.model.prev_lines),self.model.cursor_position)
+            self.view.move(len(self.model.prev_lines),min(self.model.cursor_position, self.model.window_size[1]))
             self.view.refresh()
 
         curses.nocbreak()
