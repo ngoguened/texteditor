@@ -17,6 +17,9 @@ class WindowedLines:
         self.top_window_col = 0
 
         self.cursor_snapshot = None
+    
+    def __repr__(self) -> str:
+        return f"WindowedLines({self.curr_line=}, {self.cursor_position=})"
 
     def update_window_cols(self) -> None:
         """Update the window's first column relative to the cursor."""
@@ -177,7 +180,7 @@ class WindowedLines:
         
 class Controller:
     """The connection between the model and the view"""
-    def __init__(self, model:WindowedLines=WindowedLines(),view=curses.initscr()):
+    def __init__(self, model, view):
         self.model = model
         self.view = view
 
@@ -225,7 +228,9 @@ class Controller:
         curses.endwin()
 
 def main():
-    controller = Controller()
+    model = WindowedLines()
+    view = curses.initscr()
+    controller = Controller(model=model, view=view)
     controller.run()
 
 if __name__ == "__main__":
