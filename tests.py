@@ -88,10 +88,10 @@ class TestModel(unittest.TestCase):
         new_model.up()
         assert new_model.top_window_row == 0
         new_model.down()
-        for _ in range(5):
+        for _ in range(6):
             new_model.left()
         new_model.delete()
-        assert new_model.top_window_row == 0
+        assert new_model.top_window_row == 0, new_model.top_window_row
         new_model.insert('\n')
         assert new_model.top_window_row == 1, f"{len(new_model.prev_lines[new_model.top_window_row:])+1}"
 
@@ -153,6 +153,26 @@ class TestModel(unittest.TestCase):
         new_model.set_mark()
         new_model.delete()
         assert new_model.curr_line == ['a']*5, new_model.curr_line
+
+    def test_saved_cursor_x_position(self):
+        new_model=text_editor.WindowedLines()
+        assert new_model.saved_cursor_x_position == new_model.cursor_position
+        for char in "Helloooooooooooooooooo\nWorld!":
+            new_model.insert(char)
+        new_model.up()
+        for _ in range(50):
+            new_model.right()
+        long = new_model.cursor_position
+        assert new_model.saved_cursor_x_position == long
+        new_model.down()
+        assert new_model.saved_cursor_x_position != new_model.cursor_position
+        new_model.up()
+        assert new_model.saved_cursor_x_position == new_model.cursor_position
+        new_model.down()
+        new_model.left()
+        new_model.up()
+        assert new_model.saved_cursor_x_position != long
+
 
 if __name__ == '__main__':
     unittest.main()
