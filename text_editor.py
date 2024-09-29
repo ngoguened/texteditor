@@ -3,6 +3,7 @@ The data structure is a list of previous lines and next lines.
 """
 
 import curses
+import sys
 
 class WindowedLines:
     """Stores the current line, previous lines, next lines, and the cursor position."""
@@ -33,19 +34,18 @@ class WindowedLines:
     def update_window_rows(self) -> None:
         """Update the window's first row relative to row-changing operations."""
 
-        if self.top_window_row > len(self.prev_lines):
+        if self.top_window_row >= len(self.prev_lines):
             self.top_window_row = len(self.prev_lines)
-        elif self.window_size[0] < len(self.prev_lines[self.top_window_row:])+len(self.next_lines[:self.window_size[0]-self.top_window_row-1])+1:
+        elif self.window_size[0] < len(self.prev_lines[self.top_window_row:])+len(self.next_lines[-(self.window_size[0]-len(self.prev_lines[self.top_window_row:])-1):])+1:
             self.top_window_row+=1
-        # while self.top_window_row > 0 and self.window_size[0] > len(self.next_lines[:self.window_size[0]-self.top_window_row-1]):
-        #     self.top_window_row-=1
+        
 
     def print_window(self) -> str:
         """Makes a string of the current window"""
         out=""
         prev_lines_window = self.prev_lines[self.top_window_row:]
         curr_line_and_cursor = [self.curr_line]
-        next_lines_window = self.next_lines[:self.window_size[0]-self.top_window_row][::-1]
+        next_lines_window = self.next_lines[-(self.window_size[0]-len(prev_lines_window)-1):][::-1]
 
         for line in prev_lines_window + curr_line_and_cursor + next_lines_window:
             windowed_line=''.join(line[self.top_window_col:])
@@ -177,9 +177,10 @@ class WindowedLines:
             lines = f.readlines()
         lines = [l.translate({ord('\n'): None}) for l in lines]
 
-        self.curr_line, self.next_lines = list(lines[0]), [list(l) for l in lines[1:]]
+        self.curr_line, self.next_lines = list(lines[0]), [list(l) for l in lines[1:]][::-1]
         self.prev_lines = []
-        self.cursor_position = 0
+
+        self.cursor_position = self.top_window_col = self.top_window_row = 0
         
 class Controller:
     """The connection between the model and the view"""
@@ -225,7 +226,7 @@ class Controller:
 
             self.view.erase()
             self.view.addstr(self.model.print_window())
-            self.view.move(len(self.model.prev_lines),min(self.model.cursor_position, self.model.window_size[1]))
+            self.view.move(len(self.model.prev_lines)-self.model.top_window_row,min(self.model.cursor_position, self.model.window_size[1]))
             self.view.refresh()
 
         curses.nocbreak()
@@ -237,7 +238,13 @@ def main():
     model = WindowedLines()
     view = curses.initscr()
     controller = Controller(model=model, view=view)
-    controller.run()
+    if len(sys.argv) == 2:
+        filename=str(sys.argv[1])
+    elif len(sys.argv) == 1:
+        filename =""
+    else:
+        raise AttributeError
+    controller.run(filename)
 
 if __name__ == "__main__":
     main()
