@@ -88,10 +88,10 @@ class TestModel(unittest.TestCase):
         new_model.up()
         assert new_model.top_window_row == 0
         new_model.down()
-        for _ in range(5):
+        for _ in range(6):
             new_model.left()
         new_model.delete()
-        assert new_model.top_window_row == 0
+        assert new_model.top_window_row == 0, new_model.top_window_row
         new_model.insert('\n')
         assert new_model.top_window_row == 1, f"{len(new_model.prev_lines[new_model.top_window_row:])+1}"
 
