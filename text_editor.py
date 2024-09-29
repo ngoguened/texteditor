@@ -10,6 +10,7 @@ class WindowedLines:
     def __init__(self, cursor_position=0, window_size=(10,16)) -> None:
         self.curr_line = []
         self.cursor_position = cursor_position
+        self.saved_cursor_x_position = cursor_position
         self.prev_lines= []
         self.next_lines = []
 
@@ -90,12 +91,14 @@ class WindowedLines:
         """Moves the cursor left by shifting the cursor position left."""
         if self.cursor_position > 0:
             self.cursor_position -= 1
+        self.saved_cursor_x_position = self.cursor_position
         self.update_window_cols()
 
     def right(self) -> None:
         """Moves the cursor right by shifting the cursor position right."""
         if self.cursor_position < len(self.curr_line):
             self.cursor_position += 1
+        self.saved_cursor_x_position = self.cursor_position
         self.update_window_cols()
 
     def up(self) -> None:
@@ -103,9 +106,10 @@ class WindowedLines:
         if self.prev_lines:
             self.next_lines.append(self.curr_line)
             self.curr_line = self.prev_lines.pop()
-            self.cursor_position = min(len(self.curr_line), self.cursor_position)
+            self.cursor_position = min(len(self.curr_line), self.saved_cursor_x_position)
         else:
             self.cursor_position = 0
+        
         self.update_window_cols()
         self.update_window_rows()
 
@@ -114,7 +118,7 @@ class WindowedLines:
         if self.next_lines:
             self.prev_lines.append(self.curr_line)
             self.curr_line = self.next_lines.pop()
-            self.cursor_position = min(len(self.curr_line), self.cursor_position)
+            self.cursor_position = min(len(self.curr_line), self.saved_cursor_x_position)
         else:
             self.cursor_position = len(self.curr_line)
         self.update_window_cols()
@@ -138,6 +142,7 @@ class WindowedLines:
                 self.curr_line[self.cursor_position] = char
 
             self.cursor_position += 1
+        self.saved_cursor_x_position = self.cursor_position
         self.update_window_cols()
         self.update_window_rows()
 
@@ -156,6 +161,7 @@ class WindowedLines:
         else:
             self.curr_line = self.curr_line[:self.cursor_position-1] + self.curr_line[self.cursor_position:]
             self.cursor_position -= 1
+        self.saved_cursor_x_position = self.cursor_position
         self.update_window_cols()
         self.update_window_rows()
 
@@ -223,7 +229,7 @@ class Controller:
             elif key_input == 9: # TAB
                 for _ in range(4):
                     self.model.insert(' ')
-            elif key_input == 19: # CTRL+T
+            elif key_input == 19: # CTRL+S
                 self.model.write_file(filename)
             #elif key_input == 244: # CTRL+R-ARROW
             #    if self.model.curr_line[self.model.cursor_position+1:]:
