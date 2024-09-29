@@ -166,10 +166,8 @@ class WindowedLines:
         f.write(''.join(self.curr_line))
         if self.next_lines:
             f.write('\n')
-        for line in self.next_lines[:-1]:
+        for line in self.next_lines[::-1]:
             f.write(''.join(line)+'\n')
-        if self.next_lines:
-            f.write(''.join(self.next_lines[-1]))
         f.close()
 
     def read_file(self, file_name:str) -> None:
@@ -193,6 +191,7 @@ class Controller:
         self.view.keypad(True)
         curses.noecho()
         curses.cbreak()
+        curses.raw()
 
         if filename != "":
             self.model.read_file(filename)
@@ -201,7 +200,7 @@ class Controller:
             self.view.addstr("")
         
         self.view.refresh()
-
+        
         while True:
             key_input = self.view.getch()
             if key_input == curses.KEY_LEFT:
@@ -221,6 +220,21 @@ class Controller:
                     self.model.set_mark()
                 else:
                     self.model.clear_mark()
+            elif key_input == 9: # TAB
+                for _ in range(4):
+                    self.model.insert(' ')
+            elif key_input == 19: # CTRL+T
+                self.model.write_file(filename)
+            #elif key_input == 244: # CTRL+R-ARROW
+            #    if self.model.curr_line[self.model.cursor_position+1:]:
+            #        if self.model.curr_line[self.model.cursor_position] != ' ':
+            #            while self.model.curr_line[self.model.cursor_position:] and self.model.curr_line[self.model.cursor_position] != ' ':
+            #                self.model.right()
+            #        else:
+            #            while self.model.curr_line[self.model.cursor_position:] and self.model.curr_line[self.model.cursor_position] == ' ':
+            #                self.model.right()
+            elif key_input == 3: # CTRL+C
+                break
             else:
                 self.model.insert(chr(key_input))
 
@@ -235,8 +249,9 @@ class Controller:
         curses.endwin()
 
 def main():
-    model = WindowedLines()
     view = curses.initscr()
+    size = (view.getmaxyx()[0],view.getmaxyx()[1]-1)
+    model = WindowedLines(window_size=size)
     controller = Controller(model=model, view=view)
     if len(sys.argv) == 2:
         filename=str(sys.argv[1])
