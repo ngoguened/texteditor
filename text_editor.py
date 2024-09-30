@@ -3,7 +3,6 @@ The data structure is a list of previous lines and next lines.
 """
 
 import curses
-import sys
 
 class WindowedLines:
     """Stores the current line, previous lines, next lines, and the cursor position."""
@@ -231,14 +230,20 @@ class Controller:
                     self.model.insert(' ')
             elif key_input == 19: # CTRL+S
                 self.model.write_file(filename)
-            #elif key_input == 244: # CTRL+R-ARROW
-            #    if self.model.curr_line[self.model.cursor_position+1:]:
-            #        if self.model.curr_line[self.model.cursor_position] != ' ':
-            #            while self.model.curr_line[self.model.cursor_position:] and self.model.curr_line[self.model.cursor_position] != ' ':
-            #                self.model.right()
-            #        else:
-            #            while self.model.curr_line[self.model.cursor_position:] and self.model.curr_line[self.model.cursor_position] == ' ':
-            #                self.model.right()
+            elif key_input == 27: # CTRL+R-ARROW
+                self.model.insert('x')
+                sequence = [27]
+                for _ in range(5):
+                    sequence.append(self.view.getch())
+                if sequence == [27, 91, 49, 59, 53, 67]:
+                    self.model.insert('x')
+                    # if self.model.curr_line[self.model.cursor_position+1:]:
+                    #     if self.model.curr_line[self.model.cursor_position] != ' ':
+                    #         while self.model.curr_line[self.model.cursor_position:] and self.model.curr_line[self.model.cursor_position] != ' ':
+                    #             self.model.right()
+                    #     else:
+                    #         while self.model.curr_line[self.model.cursor_position:] and self.model.curr_line[self.model.cursor_position] == ' ':
+                    #             self.model.right()
             elif key_input == 3: # CTRL+C
                 break
             else:
@@ -253,19 +258,4 @@ class Controller:
         self.view.keypad(False)
         curses.echo()
         curses.endwin()
-
-def main():
-    view = curses.initscr()
-    size = (view.getmaxyx()[0],view.getmaxyx()[1]-1)
-    model = WindowedLines(window_size=size)
-    controller = Controller(model=model, view=view)
-    if len(sys.argv) == 2:
-        filename=str(sys.argv[1])
-    elif len(sys.argv) == 1:
-        filename =""
-    else:
-        raise AttributeError
-    controller.run(filename)
-
-if __name__ == "__main__":
-    main()
+        
