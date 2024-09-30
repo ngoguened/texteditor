@@ -1,7 +1,8 @@
 """Testing"""
 import unittest
-import text_editor
 import os
+
+import text_editor
 
 model = text_editor.WindowedLines()
 class TestModel(unittest.TestCase):
@@ -119,7 +120,7 @@ class TestModel(unittest.TestCase):
         
         os.remove("tst.txt")
 
-        model.read_file("text_editor.py")
+        model.read_file("nick")
         model.down()
 
     def test_mark(self):
