@@ -6,16 +6,16 @@ import curses
 import text_editor
 
 def main():
+    if len(sys.argv) == 2:
+        filename=str(sys.argv[1])
+    elif len(sys.argv) == 1:
+        filename = input("Please name your file: ")
+    else:
+        raise AttributeError
     view = curses.initscr()
     size = (view.getmaxyx()[0],view.getmaxyx()[1]-1)
     model = text_editor.WindowedLines(window_size=size)
     controller = text_editor.Controller(model=model, view=view)
-    if len(sys.argv) == 2:
-        filename=str(sys.argv[1])
-    elif len(sys.argv) == 1:
-        filename =""
-    else:
-        raise AttributeError
     controller.run(filename)
 
 if __name__ == "__main__":
