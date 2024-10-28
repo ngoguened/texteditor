@@ -179,8 +179,10 @@ class WindowedLines:
         with open(file_name ,"r", encoding="UTF-8") as f:
             lines = f.readlines()
         lines = [l.translate({ord('\n'): None}) for l in lines]
-
-        self.curr_line, self.next_lines = list(lines[0]), [list(l) for l in lines[1:]][::-1]
+        if lines:
+            self.curr_line, self.next_lines = list(lines[0]), [list(l) for l in lines[1:]][::-1]
+        else:
+            self.curr_line, self.next_lines = [], []
         self.prev_lines = []
 
         self.cursor_position = self.top_window_col = self.top_window_row = 0
