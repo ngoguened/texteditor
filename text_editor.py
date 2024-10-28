@@ -176,9 +176,13 @@ class WindowedLines:
         f.close()
 
     def read_file(self, file_name:str) -> None:
-        with open(file_name ,"r", encoding="UTF-8") as f:
+        try:
+            f = open(file_name ,"r", encoding="UTF-8")
             lines = f.readlines()
-        lines = [l.translate({ord('\n'): None}) for l in lines]
+            lines = [l.translate({ord('\n'): None}) for l in lines]
+        except FileNotFoundError:
+            f = open(file_name, "x", encoding="UTF-8")
+            lines = []
         if lines:
             self.curr_line, self.next_lines = list(lines[0]), [list(l) for l in lines[1:]][::-1]
         else:
