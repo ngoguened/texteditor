@@ -108,18 +108,26 @@ PHONEME_DICT = {
     "ab": PhonemeEnums.ə,
 }
 
-class CharacterStream:
-    def __init__(self):
-        self.characters = []
+class ListCharStream:
+    def __init__(self, lst):
+        self.lst = lst
 
-    def get(self, view, debug:chr=None):
-        if not debug:
-            view.keypad(True)
-            key_input = view.getch()
-            view.keypad(False)
-            self.characters.append(chr(key_input))
-        else:
-            self.characters.append(debug)
+    def get(self):
+        return self.lst.pop(0) if self.lst else None
+
+class KeypadCharStream:
+    def __init__(self, view, debug=None):
+        self.view = view
+        self.debug = debug
+
+    def get(self):
+        if not self.debug:
+            self.view.keypad(True)
+            key_input = self.view.getch()
+            self.view.keypad(False)
+            return key_input
+        
+        return self.debug
 
 class Phoneme:
     def __init__(self, phoneme:PhonemeEnums, capitalized:bool=False):
@@ -127,16 +135,15 @@ class Phoneme:
         self.capitalized = capitalized
 
 class PhonemeStream:
-    def __init__(self):
-        self.phonemes = []
+    def __init__(self, charstream):
+        self.charstream = charstream
 
-    def get(self, charStream:CharacterStream, view, debug=None):
-        char_buffer = []
-        if not charStream.characters:
-            charStream.get(view, debug=debug)
-        char_buffer.append(charStream.characters.pop(0))
-        buffer_as_str = ''.join(char_buffer)
-        buffer_as_str_lowercased = buffer_as_str.lower()
-        if buffer_as_str_lowercased in PHONEME_DICT:
-            self.phonemes.append(Phoneme(phoneme=PHONEME_DICT[buffer_as_str_lowercased], capitalized=buffer_as_str_lowercased != buffer_as_str))
-
+    def get(self):
+        chars = ""
+        while True:
+            c = self.charstream.get()
+            if not c:
+                return None
+            chars += c
+            if chars in PHONEME_DICT:
+                return Phoneme(phoneme=PHONEME_DICT[chars])
