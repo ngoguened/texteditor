@@ -36,6 +36,19 @@ class TestPhonemeStream(unittest.TestCase):
         phoneme = phoneme_stream.get()
         assert not phoneme.capitalized and phoneme.phoneme == phonemes.PhonemeEnums.f
 
+class TestWordStream(unittest.TestCase):
+    def test_init(self):
+        char_stream = phonemes.ListCharStream(lst=['a'])
+        phoneme_stream = phonemes.PhonemeStream(charstream=char_stream)
+        word_stream = phonemes.WordStream(phonemestream=phoneme_stream)
+        assert word_stream.phonemestream.charstream.lst == ['a']
+    def test_get(self):
+        char_stream = phonemes.ListCharStream(lst=['h','h','a','i'])
+        phoneme_stream = phonemes.PhonemeStream(charstream=char_stream)
+        word_stream = phonemes.WordStream(phonemestream=phoneme_stream)
+        word = word_stream.get()
+        assert word == "hi", word
+
 if __name__ == '__main__':
     unittest.main()
     print("All tests pass\n")

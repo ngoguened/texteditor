@@ -6,54 +6,54 @@ from enum import Enum
 import curses
 
 class PhonemeEnums(Enum):
-    p = 1
-    t = 2
-    k = 3
-    tʃ = 4
-    f = 5
-    θ = 6
-    s = 7
-    ʃ = 8
-    x = 9
-    h = 10
-    b = 11
-    d = 12
-    g = 13
-    dʒ = 14
-    v = 15
-    ð = 16
-    z = 17
-    ʒ = 18
-    m = 19
-    n = 20
-    ŋ = 21
-    j = 22
-    w = 23
-    r = 24
-    l = 25
-    ɪ = 26
-    ɛ = 27
-    æ = 28
-    ɑ = 29
-    ʌ = 30
-    ʊ = 31
-    ɔ = 32
-    ɜr = 33
-    i = 34
-    eɪ = 35
-    oʊ = 36
-    u = 37
-    aɪ = 38
-    ɔɪ = 39
-    aʊ = 40
-    ɪr = 41
-    ɛr = 42
-    ɑr = 43
-    ɔr = 44
-    Or = 45
-    ʊr = 46
-    ər = 47
-    ə = 48
+    p = 128
+    t = 129
+    k = 130
+    tʃ = 131
+    f = 132
+    θ = 133
+    s = 134
+    ʃ = 135
+    x = 136
+    h = 137
+    b = 138
+    d = 139
+    g = 140
+    dʒ = 141
+    v = 142
+    ð = 143
+    z = 144
+    ʒ = 145
+    m = 146
+    n = 147
+    ŋ = 148
+    j = 149
+    w = 150
+    r = 151
+    l = 152
+    ɪ = 153
+    ɛ = 154
+    æ = 155
+    ɑ = 156
+    ʌ = 157
+    ʊ = 158
+    ɔ = 159
+    ɜr = 160
+    i = 161
+    eɪ = 162
+    oʊ = 163
+    u = 164
+    aɪ = 165
+    ɔɪ = 166
+    aʊ = 167
+    ɪr = 168
+    ɛr = 169
+    ɑr = 170
+    ɔr = 171
+    Or = 172
+    ʊr = 173
+    ər = 174
+    ə = 175
 
 
 PHONEME_DICT = {
@@ -108,6 +108,10 @@ PHONEME_DICT = {
     "ab": PhonemeEnums.ə,
 }
 
+WORD_DICT = {
+    (PhonemeEnums.h, PhonemeEnums.aɪ): "hi",
+}
+
 class ListCharStream:
     def __init__(self, lst):
         self.lst = lst
@@ -135,7 +139,7 @@ class Phoneme:
         self.capitalized = capitalized
 
 class PhonemeStream:
-    def __init__(self, charstream):
+    def __init__(self, charstream:KeypadCharStream):
         self.charstream = charstream
 
     def get(self):
@@ -145,5 +149,28 @@ class PhonemeStream:
             if not c:
                 return None
             chars += c
-            if chars in PHONEME_DICT:
-                return Phoneme(phoneme=PHONEME_DICT[chars])
+            if c.isalpha():
+                if chars in PHONEME_DICT:
+                    return Phoneme(phoneme=PHONEME_DICT[chars])
+            else:
+                return c
+
+class WordStream:
+    def __init__(self, phonemestream:PhonemeStream):
+        self.phonemestream = phonemestream
+    
+    def get(self):
+        phonemes_and_punctuation = []
+        while True:
+            phoneme_or_punctuation = self.phonemestream.get()
+            if not phoneme_or_punctuation:
+                return None
+            phonemes_and_punctuation.append(phoneme_or_punctuation)
+            if isinstance(phoneme_or_punctuation, Phoneme):
+                curr_phonemes = [p.phoneme for p in phonemes_and_punctuation]
+                if tuple(curr_phonemes) in WORD_DICT:
+                    return WORD_DICT[tuple(curr_phonemes)]
+            else:
+                return phoneme_or_punctuation
+                
+                
