@@ -120,26 +120,22 @@ class ListCharStream:
         return self.lst.pop(0) if self.lst else None
 
 class KeypadCharStream:
-    def __init__(self, view, debug=None):
+    def __init__(self, view):
         self.view = view
-        self.debug = debug
 
     def get(self):
-        if not self.debug:
-            self.view.keypad(True)
-            key_input = self.view.getch()
-            self.view.keypad(False)
-            return key_input
+        self.view.keypad(True)
+        key_input = self.view.getch()
+        self.view.keypad(False)
+        return key_input
         
-        return self.debug
-
 class Phoneme:
     def __init__(self, phoneme:PhonemeEnums, capitalized:bool=False):
         self.phoneme = phoneme
         self.capitalized = capitalized
 
 class PhonemeStream:
-    def __init__(self, charstream:KeypadCharStream):
+    def __init__(self, charstream):
         self.charstream = charstream
 
     def get(self):
@@ -150,18 +146,19 @@ class PhonemeStream:
                 return None
             chars += c
             if c.isalpha():
-                if chars in PHONEME_DICT:
-                    return Phoneme(phoneme=PHONEME_DICT[chars])
+                if chars.lower() in PHONEME_DICT:
+                    return Phoneme(phoneme=PHONEME_DICT[chars.lower()], capitalized=chars[0].isupper())
             else:
                 return c
 
 class WordStream:
     def __init__(self, phonemestream:PhonemeStream):
         self.phonemestream = phonemestream
+        self.word_buffer = None
     
     def get(self):
         phonemes_and_punctuation = []
-        while True:
+        while not self.word_buffer:
             phoneme_or_punctuation = self.phonemestream.get()
             if not phoneme_or_punctuation:
                 return None
@@ -169,8 +166,10 @@ class WordStream:
             if isinstance(phoneme_or_punctuation, Phoneme):
                 curr_phonemes = [p.phoneme for p in phonemes_and_punctuation]
                 if tuple(curr_phonemes) in WORD_DICT:
-                    return WORD_DICT[tuple(curr_phonemes)]
+                    self.word_buffer = WORD_DICT[tuple(curr_phonemes)]
+                    if phonemes_and_punctuation[0].capitalized:
+                        self.word_buffer = self.word_buffer[0].capitalize() + self.word_buffer[1:]
             else:
-                return phoneme_or_punctuation
-                
-                
+                self.word_buffer = phoneme_or_punctuation
+        ret, self.word_buffer = self.word_buffer[0], self.word_buffer[1:]
+        return ret

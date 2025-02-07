@@ -6,25 +6,6 @@ import os
 import phonemes
 import curses
 
-class TestListCharStream(unittest.TestCase):
-    def test_init(self):
-        character_stream = phonemes.ListCharStream(lst=[])
-        assert not character_stream.lst
-
-    def test_get(self):
-        character_stream = phonemes.ListCharStream(lst=['a','b'])
-        assert character_stream.get() == 'a'
-        assert character_stream.get() == 'b'
-        assert not character_stream.get()
-    
-class TestKeypadCharStream(unittest.TestCase):
-    def test_init(self):
-        keypad_stream = phonemes.KeypadCharStream(view=None, debug='a')
-        assert not keypad_stream.view
-    def test_get(self):
-        keypad_stream = phonemes.KeypadCharStream(view=None, debug='a')
-        assert keypad_stream.get() == 'a'
-
 class TestPhonemeStream(unittest.TestCase):
     def test_init(self):
         char_stream = phonemes.ListCharStream(lst=['a'])
@@ -35,6 +16,18 @@ class TestPhonemeStream(unittest.TestCase):
         phoneme_stream = phonemes.PhonemeStream(charstream=char_stream)
         phoneme = phoneme_stream.get()
         assert not phoneme.capitalized and phoneme.phoneme == phonemes.PhonemeEnums.f
+    def test_capitalized(self):
+        char_stream = phonemes.ListCharStream(lst=['F'])
+        phoneme_stream = phonemes.PhonemeStream(charstream=char_stream)
+        phoneme = phoneme_stream.get()
+        assert phoneme.capitalized and phoneme.phoneme == phonemes.PhonemeEnums.f
+    def test_stream(self):
+        char_stream = phonemes.ListCharStream(lst=['h','h','.','a','i'])
+        phoneme_stream = phonemes.PhonemeStream(charstream=char_stream)
+        assert phoneme_stream.get().phoneme == phonemes.PhonemeEnums.h
+        assert phoneme_stream.get() == "."
+        assert phoneme_stream.get().phoneme == phonemes.PhonemeEnums.aɪ
+    # Will loop until punctuation if wrong char is typed.
 
 class TestWordStream(unittest.TestCase):
     def test_init(self):
@@ -46,8 +39,19 @@ class TestWordStream(unittest.TestCase):
         char_stream = phonemes.ListCharStream(lst=['h','h','a','i'])
         phoneme_stream = phonemes.PhonemeStream(charstream=char_stream)
         word_stream = phonemes.WordStream(phonemestream=phoneme_stream)
-        word = word_stream.get()
+        assert word_stream.get() == "h"
+    def test_stream(self):
+        char_stream = phonemes.ListCharStream(lst=['h','h','a','i'])
+        phoneme_stream = phonemes.PhonemeStream(charstream=char_stream)
+        word_stream = phonemes.WordStream(phonemestream=phoneme_stream)
+        word = word_stream.get() + word_stream.get()
         assert word == "hi", word
+    def test_capitalized(self):
+        char_stream = phonemes.ListCharStream(lst=['H','h','a','i'])
+        phoneme_stream = phonemes.PhonemeStream(charstream=char_stream)
+        word_stream = phonemes.WordStream(phonemestream=phoneme_stream)
+        word = word_stream.get() + word_stream.get()
+        assert word == "Hi", word
 
 if __name__ == '__main__':
     unittest.main()
