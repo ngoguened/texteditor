@@ -2,6 +2,8 @@
 The data structure is a list of previous lines and next lines.
 """
 
+import phonemeKeyboard.phonemes
+
 import curses
 
 class WindowedLines:
@@ -196,6 +198,7 @@ class Controller:
     def __init__(self, model, view):
         self.model = model
         self.view = view
+        self.phoneme_mode = False
 
     def run(self, filename:str=""):
         "the loop connecting the model to user input, displayed using a curses view."
@@ -212,8 +215,17 @@ class Controller:
         
         self.view.refresh()
         
+        char_stream = phonemeKeyboard.phonemes.KeypadCharStream(view=self.view)
+        phoneme_stream = phonemeKeyboard.phonemes.PhonemeStream(charstream=char_stream)
+        word_stream = phonemeKeyboard.phonemes.WordStream(phonemestream=phoneme_stream)
+
         while True:
-            key_input = self.view.getch()
+
+            if self.phoneme_mode:
+                key_input = ord(word_stream.get())
+            else:
+                key_input = self.view.getch()
+
             if key_input == curses.KEY_LEFT:
                 self.model.left()
             elif key_input == curses.KEY_RIGHT:
@@ -236,6 +248,8 @@ class Controller:
                     self.model.insert(' ')
             elif key_input == 19: # CTRL+S
                 self.model.write_file(filename)
+            elif key_input == 16: # CTRL+P
+                self.phoneme_mode = not self.phoneme_mode
             elif key_input == 27: # CTRL+R-ARROW
                 self.model.insert('x')
                 sequence = [27]

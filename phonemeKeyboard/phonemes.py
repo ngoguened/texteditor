@@ -127,7 +127,7 @@ class KeypadCharStream:
         self.view.keypad(True)
         key_input = self.view.getch()
         self.view.keypad(False)
-        return key_input
+        return chr(key_input)
         
 class Phoneme:
     def __init__(self, phoneme:PhonemeEnums, capitalized:bool=False):
