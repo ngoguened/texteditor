@@ -108,10 +108,6 @@ PHONEME_DICT = {
     "ab": PhonemeEnums.ə,
 }
 
-WORD_DICT = {
-    (PhonemeEnums.h, PhonemeEnums.aɪ): "hi",
-}
-
 class ListCharStream:
     def __init__(self, lst):
         self.lst = lst
@@ -152,8 +148,9 @@ class PhonemeStream:
                 return c
 
 class WordStream:
-    def __init__(self, phonemestream:PhonemeStream):
+    def __init__(self, phonemestream:PhonemeStream, dictionary:dict):
         self.phonemestream = phonemestream
+        self.dictionary = dictionary # Tuple(PhonemeEnum):string
         self.word_buffer = None
     
     def get(self):
@@ -165,8 +162,8 @@ class WordStream:
             phonemes_and_punctuation.append(phoneme_or_punctuation)
             if isinstance(phoneme_or_punctuation, Phoneme):
                 curr_phonemes = [p.phoneme for p in phonemes_and_punctuation]
-                if tuple(curr_phonemes) in WORD_DICT:
-                    self.word_buffer = WORD_DICT[tuple(curr_phonemes)]
+                if tuple(curr_phonemes) in self.dictionary:
+                    self.word_buffer = self.dictionary[tuple(curr_phonemes)]
                     if phonemes_and_punctuation[0].capitalized:
                         self.word_buffer = self.word_buffer[0].capitalize() + self.word_buffer[1:]
             else:

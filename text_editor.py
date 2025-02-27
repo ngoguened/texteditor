@@ -3,7 +3,7 @@ The data structure is a list of previous lines and next lines.
 """
 
 import phonemeKeyboard.phonemes
-
+import pickle
 import curses
 
 class WindowedLines:
@@ -206,6 +206,8 @@ class Controller:
         curses.noecho()
         curses.cbreak()
         curses.raw()
+        with open('saved_dictionary.pkl', 'rb') as f:
+            word_dict = pickle.load(f)
 
         if filename != "":
             self.model.read_file(filename)
@@ -217,7 +219,7 @@ class Controller:
         
         char_stream = phonemeKeyboard.phonemes.KeypadCharStream(view=self.view)
         phoneme_stream = phonemeKeyboard.phonemes.PhonemeStream(charstream=char_stream)
-        word_stream = phonemeKeyboard.phonemes.WordStream(phonemestream=phoneme_stream)
+        word_stream = phonemeKeyboard.phonemes.WordStream(phonemestream=phoneme_stream, dictionary=word_dict)
 
         while True:
 
