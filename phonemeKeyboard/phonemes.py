@@ -108,27 +108,41 @@ PHONEME_DICT = {
     "ab": PhonemeEnums.ə,
 }
 
-class ListCharStream:
-    def __init__(self, lst):
-        self.lst = lst
-
-    def get(self):
-        return self.lst.pop(0) if self.lst else None
-
-class KeypadCharStream:
-    def __init__(self, view):
-        self.view = view
-
-    def get(self):
-        self.view.keypad(True)
-        key_input = self.view.getch()
-        self.view.keypad(False)
-        return chr(key_input)
-        
 class Phoneme:
     def __init__(self, phoneme:PhonemeEnums, capitalized:bool=False):
         self.phoneme = phoneme
         self.capitalized = capitalized
+
+class ListCharStream:
+    def __init__(self, lst):
+        self.lst = lst
+        self.phoneme_data = []
+
+    def get(self):
+        if self.lst:
+            out = self.lst.pop(0)
+            self.phoneme_data.append(out)
+            return out
+        return None
+
+class KeypadCharStream:
+    def __init__(self, view):
+        self.view = view
+        self.phoneme_data = []
+
+    def get(self):
+        self.view.keypad(True)
+        key_input = self.view.getch()
+        self.phoneme_data.append(chr(key_input))
+        self.view.keypad(False)
+        return chr(key_input)
+    
+    def consume_chars(self, chars, phoneme:Phoneme):
+        self.phoneme_data = self.phoneme_data[:-len(chars)]
+        self.phoneme_data.append(phoneme.phoneme.name)
+
+    def consume_phonemes(self, phonemes):
+        self.phoneme_data = self.phoneme_data[:-len(phonemes)]
 
 class PhonemeStream:
     def __init__(self, charstream):
@@ -143,7 +157,9 @@ class PhonemeStream:
             chars += c
             if c.isalpha():
                 if chars.lower() in PHONEME_DICT:
-                    return Phoneme(phoneme=PHONEME_DICT[chars.lower()], capitalized=chars[0].isupper())
+                    out = Phoneme(phoneme=PHONEME_DICT[chars.lower()], capitalized=chars[0].isupper())
+                    self.charstream.consume_chars(chars, out)
+                    return out
             else:
                 return c
 
@@ -163,6 +179,7 @@ class WordStream:
             if isinstance(phoneme_or_punctuation, Phoneme):
                 curr_phonemes = [p.phoneme for p in phonemes_and_punctuation]
                 if tuple(curr_phonemes) in self.dictionary:
+                    self.phonemestream.charstream.consume_phonemes(curr_phonemes)
                     self.word_buffer = self.dictionary[tuple(curr_phonemes)]
                     if phonemes_and_punctuation[0].capitalized:
                         self.word_buffer = self.word_buffer[0].capitalize() + self.word_buffer[1:]

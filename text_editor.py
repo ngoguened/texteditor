@@ -275,6 +275,10 @@ class Controller:
             self.view.addstr(self.model.print_window())
             self.view.move(len(self.model.prev_lines)-self.model.top_window_row,min(self.model.cursor_position, self.model.window_size[1]))
             self.view.refresh()
+            if self.phoneme_mode:
+                phoneme_panel = self.view.subwin(self.view.getmaxyx()[0]-5, 0)
+                phoneme_panel.addstr(''.join(word_stream.phonemestream.charstream.phoneme_data))
+                phoneme_panel.refresh()
 
         curses.nocbreak()
         self.view.keypad(False)
