@@ -143,6 +143,9 @@ class KeypadCharStream:
 
     def consume_phonemes(self, phonemes):
         self.phoneme_data = self.phoneme_data[:-len(phonemes)]
+    
+    def get_phoneme_data(self) -> str:
+        return ''.join(self.phoneme_data)
 
 class PhonemeStream:
     def __init__(self, charstream):
@@ -162,6 +165,9 @@ class PhonemeStream:
                     return out
             else:
                 return c
+            
+    def get_phoneme_data(self) -> str:
+        return self.charstream.get_phoneme_data()
 
 class WordStream:
     def __init__(self, phonemestream:PhonemeStream, dictionary:dict):
@@ -187,3 +193,6 @@ class WordStream:
                 self.word_buffer = phoneme_or_punctuation
         ret, self.word_buffer = self.word_buffer[0], self.word_buffer[1:]
         return ret
+
+    def get_phoneme_data(self) -> str:
+        return self.phonemestream.get_phoneme_data()
