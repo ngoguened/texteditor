@@ -206,9 +206,8 @@ class View:
         self.window:curses.window = None
         self.phoneme_panel:curses.window = None
 
-    def run(self) -> curses.window:
+    def run(self):
         self.window = curses.initscr()
-        return self.window
     
     def get_window_size(self) -> tuple[int]:
         return (self.window.getmaxyx()[0],self.window.getmaxyx()[1]-1)
@@ -225,6 +224,13 @@ class View:
         if self.phoneme_panel:
             self.phoneme_panel.addstr(text)
             self.phoneme_panel.refresh()
+
+    def update(self, model:WindowedLines, panel_text:str):
+        self.window.erase()
+        self.window.addstr(model.print_window())
+        self.window.move(len(model.prev_lines)-model.top_window_row,min(model.cursor_position, model.window_size[1]))
+        self.window.refresh()
+        self.update_panel(text=panel_text)
 
 class Controller:
     """The connection between the model and the view"""
@@ -305,11 +311,7 @@ class Controller:
             else:
                 self.model.insert(chr(key_input))
 
-            self.view_window.erase()
-            self.view_window.addstr(self.model.print_window())
-            self.view_window.move(len(self.model.prev_lines)-self.model.top_window_row,min(self.model.cursor_position, self.model.window_size[1]))
-            self.view_window.refresh()
-            self.view.update_panel(text=word_stream.get_phoneme_data())
+            self.view.update(model=self.model, panel_text=word_stream.get_phoneme_data())
             
 
         curses.nocbreak()
