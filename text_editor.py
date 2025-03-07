@@ -299,20 +299,6 @@ class Controller:
             elif key_input == 16: # CTRL+P
                 self.model.toggle_phoneme_mode()
                 self.view.toggle_panel(self.model)
-            elif key_input == 27: # CTRL+R-ARROW
-                self.model.insert('x')
-                sequence = [27]
-                for _ in range(5):
-                    sequence.append(self.view.getch())
-                if sequence == [27, 91, 49, 59, 53, 67]:
-                    self.model.insert('x')
-                    # if self.model.curr_line[self.model.cursor_position+1:]:
-                    #     if self.model.curr_line[self.model.cursor_position] != ' ':
-                    #         while self.model.curr_line[self.model.cursor_position:] and self.model.curr_line[self.model.cursor_position] != ' ':
-                    #             self.model.right()
-                    #     else:
-                    #         while self.model.curr_line[self.model.cursor_position:] and self.model.curr_line[self.model.cursor_position] == ' ':
-                    #             self.model.right()
             elif key_input == 3: # CTRL+C
                 break
             else:
