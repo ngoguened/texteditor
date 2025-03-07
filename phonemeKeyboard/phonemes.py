@@ -127,14 +127,14 @@ class ListCharStream:
 
 class KeypadCharStream:
     def __init__(self, view):
-        self.view = view.window #TODO: Fix: No external access to internal fields.
+        self.view = view
         self.phoneme_data = []
 
     def get(self):
-        self.view.keypad(True)
+        self.view.toggle_keypad()
         key_input = self.view.getch()
         self.phoneme_data.append(chr(key_input))
-        self.view.keypad(False)
+        self.view.toggle_keypad()
         return chr(key_input)
     
     def consume_chars(self, chars, phoneme:Phoneme):
