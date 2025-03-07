@@ -127,7 +127,7 @@ class ListCharStream:
 
 class KeypadCharStream:
     def __init__(self, view):
-        self.view = view
+        self.view = view.window #TODO: Fix: No external access to internal fields.
         self.phoneme_data = []
 
     def get(self):

@@ -186,6 +186,8 @@ class WindowedLines:
         f.close()
 
     def read_file(self, file_name:str) -> None:
+        if not file_name:
+            return
         try:
             f = open(file_name ,"r", encoding="UTF-8")
             lines = f.readlines()
@@ -204,6 +206,7 @@ class WindowedLines:
 class View:
     def __init__(self):
         self.window:curses.window = None
+        self.keypad = False
         self.phoneme_panel:curses.window = None
 
     def run(self):
@@ -220,6 +223,17 @@ class View:
             self.phoneme_panel = None
         return self.phoneme_panel
     
+    def getch(self) -> int:
+        return self.window.getch()
+
+    def add_str_to_window(self, text:str):
+        self.window.addstr(text)
+        self.window.refresh()
+
+    def toggle_keypad(self):
+        self.keypad = not self.keypad
+        self.window.keypad(self.keypad)
+
     def update_panel(self, text:str):
         if self.phoneme_panel:
             self.phoneme_panel.addstr(text)
@@ -237,35 +251,28 @@ class Controller:
     def __init__(self, model:WindowedLines, view:View):
         self.model = model
         self.view = view
-        self.view_window:curses.window = self.view.window
 
     def run(self, filename:str=""):
         "the loop connecting the model to user input, displayed using a curses view."
-        self.view_window.keypad(True)
+        self.view.toggle_keypad()
         curses.noecho()
         curses.cbreak()
         curses.raw()
         with open('saved_dictionary.pkl', 'rb') as f:
             word_dict = pickle.load(f)
 
-        if filename != "":
-            self.model.read_file(filename)
-            self.view_window.addstr(self.model.print_window())
-        else:
-            self.view_window.addstr("")
-        
-        self.view_window.refresh()
-        
-        char_stream = phonemeKeyboard.phonemes.KeypadCharStream(view=self.view_window)
+        self.model.read_file(filename)
+        self.view.add_str_to_window(self.model.print_window())
+
+        char_stream = phonemeKeyboard.phonemes.KeypadCharStream(view=self.view)
         phoneme_stream = phonemeKeyboard.phonemes.PhonemeStream(charstream=char_stream)
         word_stream = phonemeKeyboard.phonemes.WordStream(phonemestream=phoneme_stream, dictionary=word_dict)
 
         while True:
-
             if self.model.get_phoneme_mode():
                 key_input = ord(word_stream.get())
             else:
-                key_input = self.view_window.getch()
+                key_input = self.view.getch()
 
             if key_input == curses.KEY_LEFT:
                 self.model.left()
@@ -296,7 +303,7 @@ class Controller:
                 self.model.insert('x')
                 sequence = [27]
                 for _ in range(5):
-                    sequence.append(self.view_window.getch())
+                    sequence.append(self.view.getch())
                 if sequence == [27, 91, 49, 59, 53, 67]:
                     self.model.insert('x')
                     # if self.model.curr_line[self.model.cursor_position+1:]:
@@ -312,10 +319,9 @@ class Controller:
                 self.model.insert(chr(key_input))
 
             self.view.update(model=self.model, panel_text=word_stream.get_phoneme_data())
-            
 
         curses.nocbreak()
-        self.view_window.keypad(False)
+        self.view.toggle_keypad()
         curses.echo()
         curses.endwin()
         
