@@ -12,9 +12,9 @@ def main():
         filename = input("Please name your file: ")
     else:
         raise AttributeError
-    view = curses.initscr()
-    size = (view.getmaxyx()[0],view.getmaxyx()[1]-1)
-    model = text_editor.WindowedLines(window_size=size)
+    view = text_editor.View()
+    view.run()
+    model = text_editor.WindowedLines(window_size=view.get_window_size())
     controller = text_editor.Controller(model=model, view=view)
     controller.run(filename)
 

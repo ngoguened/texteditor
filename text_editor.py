@@ -2,6 +2,8 @@
 The data structure is a list of previous lines and next lines.
 """
 
+import phonemeKeyboard.phonemes
+import pickle
 import curses
 
 class WindowedLines:
@@ -18,9 +20,17 @@ class WindowedLines:
         self.top_window_col = 0
 
         self.mark = None
+
+        self.phoneme_mode = False
     
     def __repr__(self) -> str:
         return f"WindowedLines({self.curr_line=}, {self.cursor_position=})"
+
+    def get_phoneme_mode(self) -> bool:
+        return self.phoneme_mode
+    
+    def toggle_phoneme_mode(self):
+        self.phoneme_mode = not self.phoneme_mode
 
     def update_window_cols(self) -> None:
         """Update the window's first column relative to the cursor."""
@@ -190,30 +200,73 @@ class WindowedLines:
         self.prev_lines = []
 
         self.cursor_position = self.top_window_col = self.top_window_row = 0
-        
+
+class View:
+    def __init__(self):
+        self.window:curses.window = None
+        self.phoneme_panel:curses.window = None
+
+    def run(self):
+        self.window = curses.initscr()
+    
+    def get_window_size(self) -> tuple[int]:
+        return (self.window.getmaxyx()[0],self.window.getmaxyx()[1]-1)
+
+    def toggle_panel(self, model:WindowedLines) -> curses.window:
+        if model.get_phoneme_mode():
+            self.phoneme_panel = self.window.subwin(self.window.getmaxyx()[0]-5, 0)
+            self.phoneme_panel.refresh()
+        else:
+            self.phoneme_panel = None
+        return self.phoneme_panel
+    
+    def update_panel(self, text:str):
+        if self.phoneme_panel:
+            self.phoneme_panel.addstr(text)
+            self.phoneme_panel.refresh()
+
+    def update(self, model:WindowedLines, panel_text:str):
+        self.window.erase()
+        self.window.addstr(model.print_window())
+        self.window.move(len(model.prev_lines)-model.top_window_row,min(model.cursor_position, model.window_size[1]))
+        self.window.refresh()
+        self.update_panel(text=panel_text)
+
 class Controller:
     """The connection between the model and the view"""
-    def __init__(self, model, view):
+    def __init__(self, model:WindowedLines, view:View):
         self.model = model
         self.view = view
+        self.view_window:curses.window = self.view.window
 
     def run(self, filename:str=""):
         "the loop connecting the model to user input, displayed using a curses view."
-        self.view.keypad(True)
+        self.view_window.keypad(True)
         curses.noecho()
         curses.cbreak()
         curses.raw()
+        with open('saved_dictionary.pkl', 'rb') as f:
+            word_dict = pickle.load(f)
 
         if filename != "":
             self.model.read_file(filename)
-            self.view.addstr(self.model.print_window())
+            self.view_window.addstr(self.model.print_window())
         else:
-            self.view.addstr("")
+            self.view_window.addstr("")
         
-        self.view.refresh()
+        self.view_window.refresh()
         
+        char_stream = phonemeKeyboard.phonemes.KeypadCharStream(view=self.view_window)
+        phoneme_stream = phonemeKeyboard.phonemes.PhonemeStream(charstream=char_stream)
+        word_stream = phonemeKeyboard.phonemes.WordStream(phonemestream=phoneme_stream, dictionary=word_dict)
+
         while True:
-            key_input = self.view.getch()
+
+            if self.model.get_phoneme_mode():
+                key_input = ord(word_stream.get())
+            else:
+                key_input = self.view_window.getch()
+
             if key_input == curses.KEY_LEFT:
                 self.model.left()
             elif key_input == curses.KEY_RIGHT:
@@ -236,11 +289,14 @@ class Controller:
                     self.model.insert(' ')
             elif key_input == 19: # CTRL+S
                 self.model.write_file(filename)
+            elif key_input == 16: # CTRL+P
+                self.model.toggle_phoneme_mode()
+                self.view.toggle_panel(self.model)
             elif key_input == 27: # CTRL+R-ARROW
                 self.model.insert('x')
                 sequence = [27]
                 for _ in range(5):
-                    sequence.append(self.view.getch())
+                    sequence.append(self.view_window.getch())
                 if sequence == [27, 91, 49, 59, 53, 67]:
                     self.model.insert('x')
                     # if self.model.curr_line[self.model.cursor_position+1:]:
@@ -255,13 +311,11 @@ class Controller:
             else:
                 self.model.insert(chr(key_input))
 
-            self.view.erase()
-            self.view.addstr(self.model.print_window())
-            self.view.move(len(self.model.prev_lines)-self.model.top_window_row,min(self.model.cursor_position, self.model.window_size[1]))
-            self.view.refresh()
+            self.view.update(model=self.model, panel_text=word_stream.get_phoneme_data())
+            
 
         curses.nocbreak()
-        self.view.keypad(False)
+        self.view_window.keypad(False)
         curses.echo()
         curses.endwin()
         
