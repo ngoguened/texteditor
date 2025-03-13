@@ -2,7 +2,7 @@
 
 import sys
 import curses
-
+import pickle
 import text_editor
 
 def main():
@@ -17,7 +17,9 @@ def main():
     view = text_editor.View()
     view.run()
     model = text_editor.WindowedLines(window_size=view.get_window_size())
-    controller = text_editor.Controller(model=model, view=view)
+    with open('saved_dictionary.pkl', 'rb') as f:
+        input_phoneme = text_editor.InputPhoneme(pickle.load(f))
+    controller = text_editor.Controller(model=model, view=view, input_phoneme=input_phoneme)
     controller.run(filename)
 
 if __name__ == "__main__":

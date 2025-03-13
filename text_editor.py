@@ -6,6 +6,37 @@ from phonemeKeyboard.phonemes import PHONEME_DICT, Phoneme, PhonemeEnums
 import pickle
 import curses
 
+class InputPhoneme:
+    def __init__(self, word_dict):
+        self.phonemes:list[Phoneme] = []
+        self.chars:list[str] = []
+        self.word_dict = word_dict
+
+    def lower_and_join_chars(self) -> str:
+        return ''.join([c.lower() for c in self.chars])
+
+    def update_word(self) -> str:
+        phoneme_enums:tuple[PhonemeEnums] = tuple([p.phoneme for p in self.phonemes])
+        if phoneme_enums in self.word_dict:
+            word:str = self.word_dict[phoneme_enums]
+            if self.phonemes[0].capitalized:
+                word = word.capitalize()
+            self.phonemes.clear()
+            return word
+        return None
+
+    def update_phonemes(self, char:str) -> str:
+        self.chars.append(char)
+        if self.lower_and_join_chars() in PHONEME_DICT:
+            self.phonemes.append(Phoneme(phoneme=PHONEME_DICT[self.lower_and_join_chars()], capitalized=self.chars[0].isupper()))
+            self.chars = []
+            return self.update_word()
+        elif len(self.chars) > 2:
+            raise Exception("Invalid")
+
+    def get_panel_text(self) -> str:
+        return ''.join([phoneme.phoneme.name for phoneme in self.phonemes]) + ''.join(self.chars)
+
 class WindowedLines:
     """Stores the current line, previous lines, next lines, and the cursor position."""
     def __init__(self, cursor_position=0, window_size=(10,16)) -> None:
@@ -23,12 +54,6 @@ class WindowedLines:
 
         self.phoneme_mode = False
 
-        self.char_buffer = None
-        self.phonemes:list[Phoneme] = []
-
-        with open('saved_dictionary.pkl', 'rb') as f:
-            self.word_dict = pickle.load(f)
-    
     def __repr__(self) -> str:
         return f"WindowedLines({self.curr_line=}, {self.cursor_position=})"
 
@@ -209,33 +234,6 @@ class WindowedLines:
 
         self.cursor_position = self.top_window_col = self.top_window_row = 0
 
-    def update_word(self) -> str:
-        phoneme_enums:tuple[PhonemeEnums] = tuple([p.phoneme for p in self.phonemes])
-        if phoneme_enums in self.word_dict:
-            word:str = self.word_dict[phoneme_enums]
-            if self.phonemes[0].capitalized:
-                word = word.capitalize()
-            self.phonemes.clear()
-            return word
-        return None
-
-    def update_phonemes(self, char:str) -> str:
-        if not self.char_buffer:
-            if char.lower() in PHONEME_DICT:
-                self.phonemes.append(Phoneme(phoneme=PHONEME_DICT[char.lower()], capitalized=char.isupper()))
-                return self.update_word()
-            self.char_buffer = char
-        elif self.char_buffer.lower()+char.lower() in PHONEME_DICT:
-            self.phonemes.append(Phoneme(phoneme=PHONEME_DICT[self.char_buffer.lower()+char.lower()], capitalized=self.char_buffer.isupper()))
-            self.char_buffer = None
-            return self.update_word()
-        else:
-            raise Exception("Not a valid phoneme")
-    
-    def get_panel_text(self) -> str:
-        optional_char_buffer = self.char_buffer if self.char_buffer else ""
-        return ''.join([phoneme.phoneme.name for phoneme in self.phonemes]) + optional_char_buffer
-
 class View:
     def __init__(self):
         self.window:curses.window = None
@@ -272,18 +270,19 @@ class View:
             self.phoneme_panel.addstr(text)
             self.phoneme_panel.refresh()
 
-    def update(self, model:WindowedLines):
+    def update(self, model:WindowedLines, input_phoneme:InputPhoneme):
         self.window.erase()
         self.window.addstr(model.print_window())
         self.window.move(len(model.prev_lines)-model.top_window_row,min(model.cursor_position, model.window_size[1]))
         self.window.refresh()
-        self.update_panel(text=model.get_panel_text())
+        self.update_panel(text=input_phoneme.get_panel_text())
 
 class Controller:
     """The connection between the model and the view"""
-    def __init__(self, model:WindowedLines, view:View):
+    def __init__(self, model:WindowedLines, view:View, input_phoneme:InputPhoneme):
         self.model = model
         self.view = view
+        self.input_phoneme = input_phoneme
 
     def run(self, filename:str=""):
         "the loop connecting the model to user input, displayed using a curses view."
@@ -326,14 +325,14 @@ class Controller:
             elif key_input == 3: # CTRL+C
                 break
             elif self.model.get_phoneme_mode() and chr(key_input).isalpha():
-                word = self.model.update_phonemes(chr(key_input))
+                word = self.input_phoneme.update_phonemes(chr(key_input))
                 if word:
                     for char in word:
                         self.model.insert(char)
             else:
                 self.model.insert(chr(key_input))
 
-            self.view.update(model=self.model)
+            self.view.update(model=self.model,input_phoneme=self.input_phoneme)
 
         curses.nocbreak()
         self.view.toggle_keypad()
