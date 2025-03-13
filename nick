@@ -14,12 +14,13 @@ def main():
             filename = input("Please name your file: ")
     else:
         raise AttributeError
-    view = text_editor.View()
-    view.run()
-    model = text_editor.WindowedLines(window_size=view.get_window_size())
+    window = curses.initscr()
+    view = text_editor.View(window=window)
+    
+    model = text_editor.WindowedLines(window_size=(window.getmaxyx()[0], window.getmaxyx()[1]-1))
     with open('saved_dictionary.pkl', 'rb') as f:
         input_phoneme = text_editor.InputPhoneme(pickle.load(f))
-    controller = text_editor.Controller(model=model, view=view, input_phoneme=input_phoneme)
+    controller = text_editor.Controller(model=model, view=view, input_phoneme=input_phoneme, window=window)
     controller.run(filename)
 
 if __name__ == "__main__":

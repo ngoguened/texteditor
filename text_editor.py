@@ -3,7 +3,6 @@ The data structure is a list of previous lines and next lines.
 """
 
 from phonemeKeyboard.phonemes import PHONEME_DICT, Phoneme, PhonemeEnums
-import pickle
 import curses
 
 class InputPhoneme:
@@ -39,7 +38,7 @@ class InputPhoneme:
 
 class WindowedLines:
     """Stores the current line, previous lines, next lines, and the cursor position."""
-    def __init__(self, cursor_position=0, window_size=(10,16)) -> None:
+    def __init__(self, window_size=(10,16), cursor_position=0) -> None:
         self.curr_line = []
         self.cursor_position = cursor_position
         self.saved_cursor_x_position = cursor_position
@@ -235,16 +234,10 @@ class WindowedLines:
         self.cursor_position = self.top_window_col = self.top_window_row = 0
 
 class View:
-    def __init__(self):
-        self.window:curses.window = None
+    def __init__(self, window:curses.window):
+        self.window = window
         self.keypad = False
         self.phoneme_panel:curses.window = None
-
-    def run(self):
-        self.window = curses.initscr()
-    
-    def get_window_size(self) -> tuple[int]:
-        return (self.window.getmaxyx()[0],self.window.getmaxyx()[1]-1)
 
     def toggle_panel(self, model:WindowedLines) -> curses.window:
         if model.get_phoneme_mode():
@@ -253,9 +246,6 @@ class View:
         else:
             self.phoneme_panel = None
         return self.phoneme_panel
-    
-    def getch(self) -> int:
-        return self.window.getch()
 
     def add_str_to_window(self, text:str):
         self.window.addstr(text)
@@ -279,10 +269,11 @@ class View:
 
 class Controller:
     """The connection between the model and the view"""
-    def __init__(self, model:WindowedLines, view:View, input_phoneme:InputPhoneme):
+    def __init__(self, model:WindowedLines, view:View, input_phoneme:InputPhoneme, window:curses.window):
         self.model = model
         self.view = view
         self.input_phoneme = input_phoneme
+        self.window = window
 
     def run(self, filename:str=""):
         "the loop connecting the model to user input, displayed using a curses view."
@@ -295,7 +286,7 @@ class Controller:
         self.view.add_str_to_window(self.model.print_window())
 
         while True:
-            key_input = self.view.getch()
+            key_input = self.window.getch()
 
             if key_input == curses.KEY_LEFT:
                 self.model.left()
