@@ -131,10 +131,10 @@ class KeypadCharStream:
         self.phoneme_data = []
 
     def get(self):
-        self.view.keypad(True)
+        self.view.toggle_keypad()
         key_input = self.view.getch()
         self.phoneme_data.append(chr(key_input))
-        self.view.keypad(False)
+        self.view.toggle_keypad()
         return chr(key_input)
     
     def consume_chars(self, chars, phoneme:Phoneme):
