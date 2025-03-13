@@ -18,6 +18,7 @@ def main():
     else:
         raise AttributeError
     window = curses.initscr()
+    window.keypad(True)
     view = text_editor.View(window=window)
     
     model = text_editor.WindowedLines(filename=filename, window_size=(window.getmaxyx()[0], window.getmaxyx()[1]-1), word_dict=word_dict)

@@ -282,7 +282,6 @@ class WindowedLines:
 class View:
     def __init__(self, window:curses.window):
         self.window = window
-        self.keypad = False
         self.phoneme_panel:curses.window = None
 
     def toggle_panel(self, model:WindowedLines) -> curses.window:
@@ -296,10 +295,6 @@ class View:
     def add_str_to_window(self, text:str):
         self.window.addstr(text)
         self.window.refresh()
-
-    def toggle_keypad(self):
-        self.keypad = not self.keypad
-        self.window.keypad(self.keypad)
 
     def update_panel(self, text:str):
         if self.phoneme_panel:
@@ -323,7 +318,6 @@ class Controller:
 
     def run(self):
         "the loop connecting the model to user input, displayed using a curses view."
-        self.view.toggle_keypad()
         curses.noecho()
         curses.cbreak()
         curses.raw()
@@ -333,7 +327,6 @@ class Controller:
             self.view.update(model=self.model)
 
         curses.nocbreak()
-        self.view.toggle_keypad()
         curses.echo()
         curses.endwin()
         
