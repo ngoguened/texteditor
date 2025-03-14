@@ -15,25 +15,28 @@ class InputPhoneme:
             word:str = self.word_dict[phoneme_enums]
             if self.phonemes[0].capitalized:
                 word = word.capitalize()
-            self.phonemes.clear()
             return word
         return None
 
     def update_phonemes(self, char:str) -> str:
+        if not char.isalpha():
+            raise ValueError("Non-alphabetical characters cannot generate a phoneme.")
         self.chars.append(char)
         if self.lower_and_join_chars() in PHONEME_DICT:
             self.phonemes.append(Phoneme(phoneme=PHONEME_DICT[self.lower_and_join_chars()], capitalized=self.chars[0].isupper()))
             self.chars = []
             return self.update_word()
         elif len(self.chars) > 2:
-            raise Exception("Invalid")
+            raise ValueError("There cannot be more than 2 values in chars.")
 
     def get_panel_text(self) -> str:
         return ''.join([phoneme.phoneme.name for phoneme in self.phonemes]) + ''.join(self.chars)
     
-    def clear(self):
+    def complete(self) -> str:
+        out = self.update_word()
         self.phonemes = []
         self.chars = []
+        return out
 
     def is_chars_empty(self) -> bool:
         return not self.chars

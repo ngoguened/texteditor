@@ -2,39 +2,8 @@
 The data structure is a list of previous lines and next lines.
 """
 
-from phonemeKeyboard.phonemes import PHONEME_DICT, Phoneme, PhonemeEnums
 import curses
-
-class InputPhoneme:
-    def __init__(self, word_dict):
-        self.phonemes:list[Phoneme] = []
-        self.chars:list[str] = []
-        self.word_dict = word_dict
-
-    def lower_and_join_chars(self) -> str:
-        return ''.join([c.lower() for c in self.chars])
-
-    def update_word(self) -> str:
-        phoneme_enums:tuple[PhonemeEnums] = tuple([p.phoneme for p in self.phonemes])
-        if phoneme_enums in self.word_dict:
-            word:str = self.word_dict[phoneme_enums]
-            if self.phonemes[0].capitalized:
-                word = word.capitalize()
-            self.phonemes.clear()
-            return word
-        return None
-
-    def update_phonemes(self, char:str) -> str:
-        self.chars.append(char)
-        if self.lower_and_join_chars() in PHONEME_DICT:
-            self.phonemes.append(Phoneme(phoneme=PHONEME_DICT[self.lower_and_join_chars()], capitalized=self.chars[0].isupper()))
-            self.chars = []
-            return self.update_word()
-        elif len(self.chars) > 2:
-            raise Exception("Invalid")
-
-    def get_panel_text(self) -> str:
-        return ''.join([phoneme.phoneme.name for phoneme in self.phonemes]) + ''.join(self.chars)
+from input_phoneme import InputPhoneme
 
 class WindowedLines:
     """Stores the current line, previous lines, next lines, and the cursor position."""
@@ -271,11 +240,14 @@ class WindowedLines:
             self.toggle_phoneme_mode()
         elif key_input == 3: # CTRL+C
             self.running = False
-        elif self.get_phoneme_mode() and chr(key_input).isalpha():
-            word = self.input_phoneme.update_phonemes(chr(key_input))
-            if word:
-                for char in word:
-                    self.insert(char)
+        elif self.get_phoneme_mode():
+            if not chr(key_input).isalpha():
+                word = self.input_phoneme.complete()
+                if word:
+                    for char in word:
+                        self.insert(char)
+            else:
+                self.input_phoneme.update_phonemes(chr(key_input))
         else:
             self.insert(chr(key_input))
 

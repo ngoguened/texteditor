@@ -1,5 +1,5 @@
 from input_phoneme import InputPhoneme
-from phonemeKeyboard.phonemes import Phoneme, PhonemeEnums
+from phonemeKeyboard.phonemes import PhonemeEnums
 import unittest
 import pickle
 
@@ -27,15 +27,22 @@ class TestInputPhoneme(unittest.TestCase):
         word = input_phoneme.update_phonemes('i')
         assert word == "hye"
 
-    # nonalpha -> empty everything
-    def test_nonalpha_clears(self):
+    # completed word -> empty everything
+    def test_word_completion_clears(self):
         input_phoneme = InputPhoneme(word_dict=word_dict)
         input_phoneme.update_phonemes('h')
-        input_phoneme.update_phonemes(',')
+        input_phoneme.update_phonemes('h')
+        input_phoneme.update_phonemes('a')
+        input_phoneme.update_phonemes('i')
+        word = input_phoneme.complete()
+        assert word == "hye"
         assert not input_phoneme.chars
+        assert not input_phoneme.phonemes
 
-    # h nonalpha -> error: model should have picked up nonalpha chars
-    # 
+    # nonalpha -> error: model should have picked up nonalpha chars
+    def test_nonalpha_fails(self):
+        input_phoneme = InputPhoneme(word_dict=word_dict)
+        self.assertRaises(ValueError, input_phoneme.update_phonemes, ' ')
 
 if __name__ == '__main__':
     unittest.main()
