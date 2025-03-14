@@ -9,7 +9,6 @@ class WindowedLines:
     """Stores the current line, previous lines, next lines, and the cursor position."""
     def __init__(self, filename, word_dict, window_size=(10,16), cursor_position=0) -> None:
         self.filename = filename
-        
 
         self.curr_line = []
         self.cursor_position = cursor_position
@@ -199,6 +198,7 @@ class WindowedLines:
         except FileNotFoundError:
             f = open(self.filename, "x", encoding="UTF-8")
             lines = []
+        f.close()
         if lines:
             self.curr_line, self.next_lines = list(lines[0]), [list(l) for l in lines[1:]][::-1]
         else:
