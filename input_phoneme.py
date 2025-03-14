@@ -40,3 +40,6 @@ class InputPhoneme:
 
     def is_chars_empty(self) -> bool:
         return not self.chars
+
+    def is_phonemes_empty(self) -> bool:
+        return not self.phonemes

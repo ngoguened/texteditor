@@ -221,7 +221,10 @@ class WindowedLines:
         elif key_input == curses.KEY_ENTER:
             self.insert('\n')
         elif key_input == curses.KEY_BACKSPACE:
-            self.delete()
+            if self.get_phoneme_mode() and (not self.input_phoneme.is_chars_empty() or not self.input_phoneme.is_phonemes_empty()):
+                self.input_phoneme.complete()
+            else:
+                self.delete()
         elif key_input == curses.KEY_UP:
             self.up()
         elif key_input == curses.KEY_DOWN:
@@ -246,6 +249,7 @@ class WindowedLines:
                 if word:
                     for char in word:
                         self.insert(char)
+                self.insert(chr(key_input))
             else:
                 self.input_phoneme.update_phonemes(chr(key_input))
         else:
