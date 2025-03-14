@@ -4,7 +4,7 @@ import os
 
 import text_editor
 
-model = text_editor.WindowedLines()
+model = text_editor.WindowedLines(word_dict=dict(), filename="")
 class TestModel(unittest.TestCase):
     """Test the model"""
 

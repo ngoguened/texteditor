@@ -3,7 +3,7 @@
 import sys
 import curses
 import pickle
-from text_editor import WindowedLines
+from model import WindowedLines
 from view import View
 from controller import Controller
 

@@ -1,5 +1,5 @@
 import curses
-from text_editor import WindowedLines
+from model import WindowedLines
 
 class View:
     def __init__(self, window:curses.window):

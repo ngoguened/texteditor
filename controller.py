@@ -1,5 +1,5 @@
 import curses
-from text_editor import WindowedLines
+from model import WindowedLines
 from view import View
 
 class Controller:
