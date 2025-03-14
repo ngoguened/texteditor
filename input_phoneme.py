@@ -16,7 +16,7 @@ class InputPhoneme:
             if self.phonemes[0].capitalized:
                 word = word.capitalize()
             return word
-        return None
+        return ""
 
     def update_phonemes(self, char:str) -> str:
         if not char.isalpha():
@@ -30,7 +30,10 @@ class InputPhoneme:
             raise ValueError("There cannot be more than 2 values in chars.")
 
     def get_panel_text(self) -> str:
-        return ''.join([phoneme.phoneme.name for phoneme in self.phonemes]) + ''.join(self.chars)
+        curr_phonemes = ''.join([phoneme.phoneme.name for phoneme in self.phonemes])
+        curr_chars = ''.join(self.chars)
+        curr_word = self.update_word()
+        return curr_phonemes + curr_chars + "\n" + curr_word
     
     def complete(self) -> str:
         out = self.update_word()
@@ -40,3 +43,6 @@ class InputPhoneme:
 
     def is_chars_empty(self) -> bool:
         return not self.chars
+
+    def is_phonemes_empty(self) -> bool:
+        return not self.phonemes
