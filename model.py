@@ -226,9 +226,15 @@ class WindowedLines:
             else:
                 self.delete()
         elif key_input == curses.KEY_UP:
-            self.up()
+            if self.get_phoneme_mode() and not self.input_phoneme.is_word_lst_empty():
+                self.input_phoneme.cycle_word_lst(True)
+            else:
+                self.up()
         elif key_input == curses.KEY_DOWN:
-            self.down()
+            if self.get_phoneme_mode() and not self.input_phoneme.is_word_lst_empty():
+                self.input_phoneme.cycle_word_lst(False)
+            else:
+                self.down()
         elif key_input == curses.KEY_F2:
             if not self.mark:
                 self.set_mark()
