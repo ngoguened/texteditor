@@ -2,17 +2,30 @@ from phonemeKeyboard.phonemes import Phoneme, PhonemeEnums, PHONEME_DICT
 
 class InputPhoneme:
     def __init__(self, word_dict):
+        self.word_dict = word_dict
+
         self.phonemes:list[Phoneme] = []
         self.chars:list[str] = []
-        self.word_dict = word_dict
+        self.word_lst:list[str] = []
+        self.word_idx = 0
 
     def lower_and_join_chars(self) -> str:
         return ''.join([c.lower() for c in self.chars])
 
+    def update_word_idx(self, inc):
+        self.word_idx = (self.word_idx + inc) % len(self.word_lst)
+
+    def cycle_word_lst(self, clockwise:bool):
+        if clockwise:
+            self.update_word_idx(1)
+        else:
+            self.update_word_idx(-1)
+
     def update_word(self) -> str:
         phoneme_enums:tuple[PhonemeEnums] = tuple([p.phoneme for p in self.phonemes])
         if phoneme_enums in self.word_dict:
-            word:str = self.word_dict[phoneme_enums]
+            self.word_lst = self.word_dict[phoneme_enums]
+            word = self.word_lst[self.word_idx]
             if self.phonemes[0].capitalized:
                 word = word.capitalize()
             return word
@@ -46,3 +59,6 @@ class InputPhoneme:
 
     def is_phonemes_empty(self) -> bool:
         return not self.phonemes
+    
+    def is_word_lst_empty(self) -> bool:
+        return not self.word_lst

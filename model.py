@@ -9,7 +9,6 @@ class WindowedLines:
     """Stores the current line, previous lines, next lines, and the cursor position."""
     def __init__(self, filename, word_dict, window_size=(10,16), cursor_position=0) -> None:
         self.filename = filename
-        
 
         self.curr_line = []
         self.cursor_position = cursor_position
@@ -199,6 +198,7 @@ class WindowedLines:
         except FileNotFoundError:
             f = open(self.filename, "x", encoding="UTF-8")
             lines = []
+        f.close()
         if lines:
             self.curr_line, self.next_lines = list(lines[0]), [list(l) for l in lines[1:]][::-1]
         else:
@@ -226,9 +226,15 @@ class WindowedLines:
             else:
                 self.delete()
         elif key_input == curses.KEY_UP:
-            self.up()
+            if self.get_phoneme_mode() and not self.input_phoneme.is_word_lst_empty():
+                self.input_phoneme.cycle_word_lst(True)
+            else:
+                self.up()
         elif key_input == curses.KEY_DOWN:
-            self.down()
+            if self.get_phoneme_mode() and not self.input_phoneme.is_word_lst_empty():
+                self.input_phoneme.cycle_word_lst(False)
+            else:
+                self.down()
         elif key_input == curses.KEY_F2:
             if not self.mark:
                 self.set_mark()
@@ -254,55 +260,3 @@ class WindowedLines:
                 self.input_phoneme.update_phonemes(chr(key_input))
         else:
             self.insert(chr(key_input))
-
-class View:
-    def __init__(self, window:curses.window):
-        self.window = window
-        self.phoneme_panel:curses.window = None
-
-    def toggle_panel(self, model:WindowedLines) -> curses.window:
-        if model.get_phoneme_mode():
-            self.phoneme_panel = self.window.subwin(self.window.getmaxyx()[0]-5, 0)
-            self.phoneme_panel.refresh()
-        else:
-            self.phoneme_panel = None
-        return self.phoneme_panel
-
-    def add_str_to_window(self, text:str):
-        self.window.addstr(text)
-        self.window.refresh()
-
-    def update_panel(self, text:str):
-        if self.phoneme_panel:
-            self.phoneme_panel.addstr(text)
-            self.phoneme_panel.refresh()
-
-    def update(self, model:WindowedLines):
-        self.window.erase()
-        self.window.addstr(model.print_window())
-        self.window.move(len(model.prev_lines)-model.top_window_row,min(model.cursor_position, model.window_size[1]))
-        self.window.refresh()
-        self.update_panel(text=model.get_panel_text())
-        self.toggle_panel(model=model)
-
-class Controller:
-    """The connection between the model and the view"""
-    def __init__(self, model:WindowedLines, view:View, window:curses.window):
-        self.model = model
-        self.view = view
-        self.window = window
-
-    def run(self):
-        "the loop connecting the model to user input, displayed using a curses view."
-        curses.noecho()
-        curses.cbreak()
-        curses.raw()
-
-        while self.model.is_running():
-            self.model.putch(self.window.getch())
-            self.view.update(model=self.model)
-
-        curses.nocbreak()
-        curses.echo()
-        curses.endwin()
-        

@@ -3,7 +3,9 @@
 import sys
 import curses
 import pickle
-import text_editor
+from model import WindowedLines
+from view import View
+from controller import Controller
 
 def main():
     with open('saved_dictionary.pkl', 'rb') as f:
@@ -19,11 +21,11 @@ def main():
         raise AttributeError
     window = curses.initscr()
     window.keypad(True)
-    view = text_editor.View(window=window)
+    view = View(window=window)
     
-    model = text_editor.WindowedLines(filename=filename, window_size=(window.getmaxyx()[0], window.getmaxyx()[1]-1), word_dict=word_dict)
+    model = WindowedLines(filename=filename, window_size=(window.getmaxyx()[0], window.getmaxyx()[1]-1), word_dict=word_dict)
     
-    controller = text_editor.Controller(model=model, view=view, window=window)
+    controller = Controller(model=model, view=view, window=window)
     
     model.read_file()
     view.add_str_to_window(model.print_window())

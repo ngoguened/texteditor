@@ -15,7 +15,7 @@ class TestInputPhoneme(unittest.TestCase):
         input_phoneme.update_phonemes('h')
         assert not input_phoneme.chars and input_phoneme.phonemes[0].phoneme == PhonemeEnums.h
 
-    # hh ai -> "hye" str
+    # hh ai -> "heye" str
     def test_one_word(self):
         input_phoneme = InputPhoneme(word_dict=word_dict)
         word = input_phoneme.update_phonemes('h')
@@ -25,17 +25,14 @@ class TestInputPhoneme(unittest.TestCase):
         input_phoneme.update_phonemes('a')
         assert not word
         word = input_phoneme.update_phonemes('i')
-        assert word == "hye"
+        assert word == "heye"
 
     # completed word -> empty everything
     def test_word_completion_clears(self):
         input_phoneme = InputPhoneme(word_dict=word_dict)
-        input_phoneme.update_phonemes('h')
-        input_phoneme.update_phonemes('h')
-        input_phoneme.update_phonemes('a')
-        input_phoneme.update_phonemes('i')
+        input_phoneme.update_phonemes('u')
         word = input_phoneme.complete()
-        assert word == "hye"
+        assert word == "a"
         assert not input_phoneme.chars
         assert not input_phoneme.phonemes
 
@@ -43,6 +40,19 @@ class TestInputPhoneme(unittest.TestCase):
     def test_nonalpha_fails(self):
         input_phoneme = InputPhoneme(word_dict=word_dict)
         self.assertRaises(ValueError, input_phoneme.update_phonemes, ' ')
+    
+    def test_cycle_word_lst(self):
+        input_phoneme = InputPhoneme(word_dict=word_dict)
+        input_phoneme.update_phonemes('h')
+        input_phoneme.update_phonemes('h')
+        input_phoneme.update_phonemes('a')
+        word = input_phoneme.update_phonemes('i')
+        assert word == "heye"
+        input_phoneme.cycle_word_lst(True)
+        assert input_phoneme.update_word() != "heye"
+        input_phoneme.cycle_word_lst(False)
+        assert input_phoneme.update_word() == "heye"
+
 
 if __name__ == '__main__':
     unittest.main()

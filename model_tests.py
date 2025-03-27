@@ -2,9 +2,9 @@
 import unittest
 import os
 
-import text_editor
+from model import WindowedLines
 
-model = text_editor.WindowedLines()
+model = WindowedLines(word_dict=dict(), filename="tst.txt")
 class TestModel(unittest.TestCase):
     """Test the model"""
 
@@ -23,7 +23,7 @@ class TestModel(unittest.TestCase):
         model.delete()
         assert model.curr_line == []
         model.delete()
-        assert model.curr_line == [] 
+        assert model.curr_line == []
 
     def test_lines(self):
         """check line storage works correctly"""
@@ -59,7 +59,7 @@ class TestModel(unittest.TestCase):
 
     def test_window(self):
         """Test that the window works properly"""
-        new_model=text_editor.WindowedLines(window_size=(1,5))
+        new_model=WindowedLines(word_dict=dict(), filename="", window_size=(1,5))
         assert new_model.top_window_row == 0 and new_model.top_window_col == 0
         for char in "Hello\nWorld!":
             new_model.insert(char)
@@ -81,7 +81,7 @@ class TestModel(unittest.TestCase):
         new_model.up()
         assert new_model.top_window_row == 0
 
-        new_model=text_editor.WindowedLines(window_size=(2,5))
+        new_model=WindowedLines(window_size=(2,5), word_dict=dict(), filename="tst.txt")
         for char in "Hello\nthere,\nWorld!":
             new_model.insert(char)
         assert new_model.top_window_row == 1, new_model.prev_lines
@@ -96,7 +96,7 @@ class TestModel(unittest.TestCase):
         new_model.insert('\n')
         assert new_model.top_window_row == 1, f"{len(new_model.prev_lines[new_model.top_window_row:])+1}"
 
-        new_model=text_editor.WindowedLines(window_size=(10,5))
+        new_model=WindowedLines(window_size=(10,5), word_dict=dict(), filename="tst.txt")
         for char in "a\nb\nc\nd":
             new_model.insert(char)
         new_model.up()
@@ -106,25 +106,22 @@ class TestModel(unittest.TestCase):
         new_model.up()
         assert new_model.print_window() == "a    \nb    \nc    \nd    ", new_model.print_window()
 
-        new_model=text_editor.WindowedLines(window_size=(4,5))
+        new_model=WindowedLines(window_size=(4,5), word_dict=dict(), filename="tst.txt")
         for char in "a\nb\nc\nd\ne\nf\ng\nh\ni\nj\nk":
             new_model.insert(char)
         for _ in range(18):
             new_model.up()
 
     def test_read_write(self):
-        model.write_file("tst.txt")
-        model.read_file("tst.txt")
+        model.write_file()
+        model.read_file()
         assert model.curr_line == ['a','b','c','d'], model.curr_line
         assert model.next_lines == [['f'],['e']], model.next_lines
         
         os.remove("tst.txt")
 
-        model.read_file("nick")
-        model.down()
-
     def test_mark(self):
-        new_model=text_editor.WindowedLines()
+        new_model=WindowedLines(word_dict=dict(), filename="tst.txt")
         for char in "Hello\nthere,\nWorld!":
             new_model.insert(char)
         assert new_model.mark is None
@@ -156,7 +153,7 @@ class TestModel(unittest.TestCase):
         assert new_model.curr_line == ['a']*5, new_model.curr_line
 
     def test_saved_cursor_x_position(self):
-        new_model=text_editor.WindowedLines()
+        new_model=WindowedLines(word_dict=dict(), filename="tst.txt")
         assert new_model.saved_cursor_x_position == new_model.cursor_position
         for char in "Helloooooooooooooooooo\nWorld!":
             new_model.insert(char)
