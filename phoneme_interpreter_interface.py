@@ -4,9 +4,9 @@ and methods to add context (the rest of the document, as a string. This will
 only be used when the input is very long), prompt (the string describing the 
 task to the LLM), and input (the list of editable words)
 '''
-class PhonemeInterpreter:
-    def __init__(self, llm, context:str=None):
-        self.llm = llm
+class PhonemeInterpreterInterface:
+    def __init__(self, llm:str=None, context:str=None):
+        self.llm = llm # The llm api provider takes the model name as input.
         self.context = context
 
     def interpret(self, input:str) -> str:
