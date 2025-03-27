@@ -12,12 +12,14 @@ class InputPhoneme:
     def lower_and_join_chars(self) -> str:
         return ''.join([c.lower() for c in self.chars])
 
+    def update_word_idx(self, inc):
+        self.word_idx = (self.word_idx + inc) % len(self.word_lst)
+
     def cycle_word_lst(self, clockwise:bool):
         if clockwise:
-            self.word_idx += 1
+            self.update_word_idx(1)
         else:
-            self.word_idx -= 1
-        self.word_idx %= len(self.word_lst)
+            self.update_word_idx(-1)
 
     def update_word(self) -> str:
         phoneme_enums:tuple[PhonemeEnums] = tuple([p.phoneme for p in self.phonemes])
