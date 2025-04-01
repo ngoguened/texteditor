@@ -3,7 +3,6 @@ The data structure that generates phonemes from a list of characters.
 """
 
 from enum import Enum
-import curses
 
 class PhonemeEnums(Enum):
     p = 128
@@ -112,87 +111,3 @@ class Phoneme:
     def __init__(self, phoneme:PhonemeEnums, capitalized:bool=False):
         self.phoneme = phoneme
         self.capitalized = capitalized
-
-class ListCharStream:
-    def __init__(self, lst):
-        self.lst = lst
-        self.phoneme_data = []
-
-    def get(self):
-        if self.lst:
-            out = self.lst.pop(0)
-            self.phoneme_data.append(out)
-            return out
-        return None
-
-class KeypadCharStream:
-    def __init__(self, view):
-        self.view = view
-        self.phoneme_data = []
-
-    def get(self):
-        self.view.toggle_keypad()
-        key_input = self.view.getch()
-        self.phoneme_data.append(chr(key_input))
-        self.view.toggle_keypad()
-        return chr(key_input)
-    
-    def consume_chars(self, chars, phoneme:Phoneme):
-        self.phoneme_data = self.phoneme_data[:-len(chars)]
-        self.phoneme_data.append(phoneme.phoneme.name)
-
-    def consume_phonemes(self, phonemes):
-        self.phoneme_data = self.phoneme_data[:-len(phonemes)]
-    
-    def get_phoneme_data(self) -> str:
-        return ''.join(self.phoneme_data)
-
-class PhonemeStream:
-    def __init__(self, charstream):
-        self.charstream = charstream
-
-    def get(self):
-        chars = ""
-        while True:
-            c = self.charstream.get()
-            if not c:
-                return None
-            chars += c
-            if c.isalpha():
-                if chars.lower() in PHONEME_DICT:
-                    out = Phoneme(phoneme=PHONEME_DICT[chars.lower()], capitalized=chars[0].isupper())
-                    self.charstream.consume_chars(chars, out)
-                    return out
-            else:
-                return c
-            
-    def get_phoneme_data(self) -> str:
-        return self.charstream.get_phoneme_data()
-
-class WordStream:
-    def __init__(self, phonemestream:PhonemeStream, dictionary:dict):
-        self.phonemestream = phonemestream
-        self.dictionary = dictionary # Tuple(PhonemeEnum):string
-        self.word_buffer = None
-    
-    def get(self):
-        phonemes_and_punctuation = []
-        while not self.word_buffer:
-            phoneme_or_punctuation = self.phonemestream.get()
-            if not phoneme_or_punctuation:
-                return None
-            phonemes_and_punctuation.append(phoneme_or_punctuation)
-            if isinstance(phoneme_or_punctuation, Phoneme):
-                curr_phonemes = [p.phoneme for p in phonemes_and_punctuation]
-                if tuple(curr_phonemes) in self.dictionary:
-                    self.phonemestream.charstream.consume_phonemes(curr_phonemes)
-                    self.word_buffer = self.dictionary[tuple(curr_phonemes)]
-                    if phonemes_and_punctuation[0].capitalized:
-                        self.word_buffer = self.word_buffer[0].capitalize() + self.word_buffer[1:]
-            else:
-                self.word_buffer = phoneme_or_punctuation
-        ret, self.word_buffer = self.word_buffer[0], self.word_buffer[1:]
-        return ret
-
-    def get_phoneme_data(self) -> str:
-        return self.phonemestream.get_phoneme_data()
