@@ -6,7 +6,7 @@ import pickle
 with open('saved_dictionary.pkl', 'rb') as f:
     word_dict = pickle.load(f)
 
-class TestInterpreters(unittest.TestCase):
+class InterpretersTest(unittest.TestCase):
     """Test each implemented interpreter"""
     def test_interpret(self):
         interpreters = [DictPhonemeInterpreter()]
