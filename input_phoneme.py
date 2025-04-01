@@ -1,9 +1,9 @@
-from phonemeKeyboard.phonemes import Phoneme, PhonemeEnums, PHONEME_DICT
+from phonemeKeyboard.phonemes import Phoneme, PHONEME_DICT
+from dict_phoneme_interpreter import DictPhonemeInterpreter
 
 class InputPhoneme:
-    def __init__(self, word_dict):
-        self.word_dict = word_dict
-
+    def __init__(self):
+        self.phoneme_interpreter = DictPhonemeInterpreter()
         self.phonemes:list[Phoneme] = []
         self.chars:list[str] = []
         self.word_lst:list[str] = []
@@ -22,9 +22,9 @@ class InputPhoneme:
             self.update_word_idx(-1)
 
     def update_word(self) -> str:
-        phoneme_enums:tuple[PhonemeEnums] = tuple([p.phoneme for p in self.phonemes])
-        if phoneme_enums in self.word_dict:
-            self.word_lst = self.word_dict[phoneme_enums]
+        tmp = self.phoneme_interpreter.interpret(self.phonemes)
+        if tmp:
+            self.word_lst = tmp
             word = self.word_lst[self.word_idx]
             if self.phonemes[0].capitalized:
                 word = word.capitalize()

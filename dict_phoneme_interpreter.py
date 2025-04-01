@@ -1,8 +1,12 @@
 from phoneme_interpreter_interface import PhonemeInterpreterInterface
 from phonemeKeyboard.phonemes import PhonemeEnums, Phoneme
+import pickle
+
+with open('saved_dictionary.pkl', 'rb') as f:
+    word_dict = pickle.load(f)
 
 class DictPhonemeInterpreter(PhonemeInterpreterInterface):
-    def __init__(self, word_dict):
+    def __init__(self):
         self.word_dict = word_dict
     
     def interpret(self, phonemes:list[Phoneme]):

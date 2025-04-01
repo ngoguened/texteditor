@@ -9,7 +9,7 @@ with open('saved_dictionary.pkl', 'rb') as f:
 class TestInterpreters(unittest.TestCase):
     """Test each implemented interpreter"""
     def test_interpret(self):
-        interpreters = [DictPhonemeInterpreter(word_dict=word_dict)]
+        interpreters = [DictPhonemeInterpreter()]
         for interpreter in interpreters:
             assert interpreter.interpret([Phoneme(phoneme=PhonemeEnums.h), Phoneme(phoneme=PhonemeEnums.aɪ)])
 

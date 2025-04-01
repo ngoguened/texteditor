@@ -2,15 +2,11 @@
 
 import sys
 import curses
-import pickle
 from model import WindowedLines
 from view import View
 from controller import Controller
 
 def main():
-    with open('saved_dictionary.pkl', 'rb') as f:
-        word_dict = pickle.load(f)
-
     if len(sys.argv) == 2:
         filename=str(sys.argv[1])
     elif len(sys.argv) == 1:
@@ -22,11 +18,11 @@ def main():
     window = curses.initscr()
     window.keypad(True)
     view = View(window=window)
-    
-    model = WindowedLines(filename=filename, window_size=(window.getmaxyx()[0], window.getmaxyx()[1]-1), word_dict=word_dict)
-    
+
+    model = WindowedLines(filename=filename, window_size=(window.getmaxyx()[0], window.getmaxyx()[1]-1))
+
     controller = Controller(model=model, view=view, window=window)
-    
+
     model.read_file()
     view.add_str_to_window(model.print_window())
     controller.run()
