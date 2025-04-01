@@ -1,27 +1,17 @@
 import unittest
-from phoneme_interpreter_interface import PhonemeInterpreterInterface
+from phonemeKeyboard.phonemes import Phoneme, PhonemeEnums
+import pickle
 
-default_nick_llm = PhonemeInterpreterInterface()
-class TestInterpreterInterface(unittest.TestCase): # Is this test class even worth having? It feels trivial.
-    """Test the default interpreter"""
+with open('saved_dictionary.pkl', 'rb') as f:
+    word_dict = pickle.load(f)
 
-    def test_default_init(self):
-        assert not default_nick_llm.context and not default_nick_llm.llm
-
-    def test_default_interpret(self):
-        assert not default_nick_llm.interpret("")
-    
-class TestImplementedInterperter(unittest.TestCase):
-    """Test the interpreter implementation"""
-
+class TestInterpreters(unittest.TestCase):
+    """Test each implemented interpreter"""
     def test_interpret(self):
-        pass
+        interpreters = []
+        for interpreter in interpreters:
+            assert interpreter.interpret([Phoneme(phoneme=PhonemeEnums.h), Phoneme(phoneme=PhonemeEnums.aɪ)])
 
-    def test_set_context(self):
-        pass
-
-    def test_add_context(self):
-        pass
 
 if __name__ == '__main__':
     unittest.main()
