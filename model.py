@@ -4,6 +4,7 @@ The data structure is a list of previous lines and next lines.
 
 import curses
 from input_phoneme import InputPhoneme
+from dict_phoneme_interpreter import DictPhonemeInterpreter
 
 class WindowedLines:
     """Stores the current line, previous lines, next lines, and the cursor position."""
@@ -23,7 +24,7 @@ class WindowedLines:
         self.mark = None
 
         self.phoneme_mode = False
-        self.input_phoneme = InputPhoneme()
+        self.input_phoneme = InputPhoneme(interpreter=DictPhonemeInterpreter())
         self.running = True
 
     def __repr__(self) -> str:
