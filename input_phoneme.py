@@ -1,4 +1,4 @@
-from phonemeKeyboard.phonemes import Phoneme, PHONEME_DICT
+from phonemes import Phoneme, PHONEME_DICT
 from phoneme_interpreter_interface import PhonemeInterpreterInterface
 
 class InputPhoneme:

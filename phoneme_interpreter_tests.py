@@ -1,7 +1,7 @@
 import unittest
-from dict_phoneme_interpreter import DictPhonemeInterpreter
-from phonemeKeyboard.phonemes import Phoneme, PhonemeEnums
 import pickle
+from phonemes import Phoneme, PhonemeEnums
+from dict_phoneme_interpreter import DictPhonemeInterpreter
 
 with open('saved_dictionary.pkl', 'rb') as f:
     word_dict = pickle.load(f)

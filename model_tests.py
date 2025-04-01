@@ -5,7 +5,7 @@ import os
 from model import WindowedLines
 
 model = WindowedLines(filename="tst.txt")
-class TestModel(unittest.TestCase):
+class ModelTest(unittest.TestCase):
     """Test the model"""
 
     def test_insert_delete(self):

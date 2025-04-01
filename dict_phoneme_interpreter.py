@@ -1,6 +1,6 @@
-from phoneme_interpreter_interface import PhonemeInterpreterInterface
-from phonemeKeyboard.phonemes import PhonemeEnums, Phoneme
 import pickle
+from phonemes import PhonemeEnums, Phoneme
+from phoneme_interpreter_interface import PhonemeInterpreterInterface
 
 with open('saved_dictionary.pkl', 'rb') as f:
     word_dict = pickle.load(f)

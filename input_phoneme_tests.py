@@ -1,7 +1,7 @@
-from input_phoneme import InputPhoneme
-from phonemeKeyboard.phonemes import PhonemeEnums
-from dict_phoneme_interpreter import DictPhonemeInterpreter
 import unittest
+from phonemes import PhonemeEnums
+from input_phoneme import InputPhoneme
+from dict_phoneme_interpreter import DictPhonemeInterpreter
 
 class InputPhonemeTest(unittest.TestCase):
     # hh -> h phoneme
