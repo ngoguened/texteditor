@@ -3,7 +3,7 @@ from phonemeKeyboard.phonemes import PhonemeEnums
 from dict_phoneme_interpreter import DictPhonemeInterpreter
 import unittest
 
-class TestInputPhoneme(unittest.TestCase):
+class InputPhonemeTest(unittest.TestCase):
     # hh -> h phoneme
     def test_one_phoneme(self):
         input_phoneme = InputPhoneme(interpreter=DictPhonemeInterpreter())

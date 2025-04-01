@@ -6,7 +6,7 @@ import os
 import phonemes
 import curses
 
-class TestPhonemeStream(unittest.TestCase):
+class PhonemeStreamTest(unittest.TestCase):
     def test_init(self):
         char_stream = phonemes.ListCharStream(lst=['a'])
         phoneme_stream = phonemes.PhonemeStream(charstream=char_stream)
@@ -29,7 +29,7 @@ class TestPhonemeStream(unittest.TestCase):
         assert phoneme_stream.get().phoneme == phonemes.PhonemeEnums.aɪ
     # Will loop until punctuation if wrong char is typed.
 
-class TestWordStream(unittest.TestCase):
+class WordStreamTest(unittest.TestCase):
     def test_init(self):
         char_stream = phonemes.ListCharStream(lst=['a'])
         phoneme_stream = phonemes.PhonemeStream(charstream=char_stream)
