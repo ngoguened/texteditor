@@ -1,4 +1,5 @@
 import unittest
+from dict_phoneme_interpreter import DictPhonemeInterpreter
 from phonemeKeyboard.phonemes import Phoneme, PhonemeEnums
 import pickle
 
@@ -8,7 +9,7 @@ with open('saved_dictionary.pkl', 'rb') as f:
 class TestInterpreters(unittest.TestCase):
     """Test each implemented interpreter"""
     def test_interpret(self):
-        interpreters = []
+        interpreters = [DictPhonemeInterpreter(word_dict=word_dict)]
         for interpreter in interpreters:
             assert interpreter.interpret([Phoneme(phoneme=PhonemeEnums.h), Phoneme(phoneme=PhonemeEnums.aɪ)])
 
