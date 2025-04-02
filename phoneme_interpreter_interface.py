@@ -1,6 +1,6 @@
 '''
-PhonemeInterpreterInterface is an interface for implementations that replace the stream of phonemes
-entered by the user with a list of possible words that the stream of phonemes could represent.
+PhonemeInterpreterInterface is an interface where given a sequence of phonemes entered by the user,
+implementations suggest a list of possible words that those phonemes could represent.
 The order is potentially meaningful.
 '''
 from phonemes import Phoneme
