@@ -18,6 +18,13 @@ class InterpretersTest(unittest.TestCase):
             assert interpreter.interpret([
                 Phoneme(phoneme=PhonemeEnums.h), Phoneme(phoneme=PhonemeEnums.aɪ)
                 ])
+            
+    def test_empty_interpret(self):
+        interpreters:list[PhonemeInterpreterInterface] = [
+            TestPhonemeInterpreter(), DictPhonemeInterpreter()
+            ]
+        for interpreter in interpreters:
+            assert not interpreter.interpret([])
 
 
 if __name__ == '__main__':
